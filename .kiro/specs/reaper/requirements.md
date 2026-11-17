@@ -48,11 +48,22 @@ The Crew docs summarised in Zombills `architecture.md` ("Kiro Crew findings") le
 
 - **Committed bundles.** Because a local-path install runs no `onInstall` and no installed copy has `node_modules`, `mcp/dist/server.js`, `backend/dist/server.js` and `ui/dist/index.mjs` are single-file bundles built with esbuild, with `@zombills/core` and every other runtime library inlined, and committed. The root `package.json` has **zero runtime `dependencies`**, so Crew's `npm install --production` fetches nothing. A CI-style test checks the committed bundles match the source (Requirement 2.9).
 - **Permissions.** `permissions` is exactly `{ "cron": true, "mcpTools": ["send_message"] }` (Requirement 1.6).
+
+> **Amended by spike 2026-11-17** (`spike-2026-11-17.md`): `permissions` also holds `"api": ["/apps/zombills-reaper/api"]` (no trailing slash), because `useAppApi().get()` is checked against `permissions.api` by prefix and the page needs it. See Requirement 1.6.
+
 - **Statements folder.** `setup.configSchema` declares `statementsFolder` so the manifest documents it and a later Crew can fill it, but the Reaper reads the folder from its own Settings file (`<data dir>/settings.json`). The user sets it by telling the Reaper agent in the Crew dashboard chat, which calls `set_statements_folder` (Requirement 3). This adds one tool to the four in the brief. Editing `settings.json` by hand also works.
 - **MCP launch.** `app.json` launches the server as `node` with the absolute path `${HOME}/.kiro/crew/apps/zombills-reaper/mcp/dist/server.js`. A Crew with `KIROCREW_HOME` set elsewhere is not supported in this spec (README says so).
+
+> **Amended by spike 2026-11-17** (`spike-2026-11-17.md`): `${HOME}` in `args` is **not** expanded when Crew projects the server onto the session, and the server silently never starts. The server is launched as `"command": "/bin/sh", "args": ["-c", "exec node \"$HOME/.kiro/crew/apps/zombills-reaper/mcp/dist/server.js\""]`, where the shell expands `$HOME` (2/2 runs). Bare `node` resolves through the PATH the gateway inherits. See Requirement 1.2.
+
 - **Header name.** The steering files say `X-Crew-Proxy`; the 0.12.2 source sends `X-KiroCrew-Proxy`. This spec uses the source's name. `tech.md` and `privacy.md` SHALL be corrected in the same change (Requirement 15.3).
+
+> **Amended by spike 2026-11-17** (`spike-2026-11-17.md`): the proxy sends three headers: `X-KiroCrew-Proxy` (v1), `X-KiroCrew-Proxy-Nonce` and `X-KiroCrew-Proxy-V2`. The backend verifies the **v2** signature with a replay cache (`apps/proxy_auth.py`, `verify_proxy_request_v2`) and ignores v1. See Requirement 11.4.
+
 - **Alert delivery.** The cron is `silent: true`, and the agent sends alerts itself with `send_message` to `telegram`. A month with nothing new sends no chat message, so the channel is never filled with "all quiet" posts. The one exception is a data-free "no statements folder yet" message (Requirement 9.6). The run still shows in the cron's dashboard tab.
 - **Inbound "bury".** Telegram messages reach the agent the user's Crew routes that channel to. The README tells the user to route their Telegram DM to the Reaper agent. How that setting is named in Crew is checked during design; if routing is not possible, the fallback is that the user sends "bury" in the Reaper's dashboard chat tab.
+
+> **Amended by spike 2026-11-17** (`spike-2026-11-17.md`): the routing mechanism is Telegram's `/agent` picker (`/agent reaper`). It is **not tested yet** (spike Q7). Design isolates it and lists what the Telegram test must confirm; the dashboard chat fallback stays.
 
 ### Scope budget
 
@@ -75,6 +86,8 @@ The tasks SHALL start with an end-to-end walking skeleton: `app.json`, a one-too
 - Telling apart the same charge on two accounts. Identical charges on the same day across files are merged (Requirement 4.4); the README says so.
 
 ### Open questions (spike before design)
+
+> **Amended by spike 2026-11-17** (`spike-2026-11-17.md`): answered in `spike-2026-11-17.md` except Q6 (Telegram delivery) and Q7 (inbound routing), which are untested, Q10 (each run gets a fresh MCP server process; the count under load was not measured) and part of Q5 (whether `read`, `glob`, `grep` are present). `design.md` ("Spike results" and "Telegram test") records how each answer is used.
 
 Check these on the local Crew 0.12.2 before writing `design.md`:
 
@@ -107,6 +120,8 @@ Check these on the local Crew 0.12.2 before writing `design.md`:
 - **Tracked charge**: A record in the History of one recurring charge the Reaper has seen: `{ key, merchant, serviceId, currency, cadence, merchantKey, amountCents, cadenceAssumed, firstSeenScan, lastSeenScan, reportedRiseDate }`, with `key` the Core subscription `id` it was last matched to and `reportedRiseDate` the `latestRise.date` last reported as possessed, or `null`.
 - **Match**: Subscriptions of a scan are matched to Tracked charges in passes. (1) `s.id === t.key`. (2) Among those left, the Qualifying candidate rule of the Zombills graveyard-memory spec: same Triple, `s.priceHistory` holds an entry with `amountCents === t.amountCents`, and `!s.cadenceAssumed || t.cadenceAssumed`; a pair is accepted only when `t` is the only qualifying candidate for `s` and `s` the only one for `t`. No tie-breakers. (3) Anything left is unmatched. Subscriptions are matched to Tombstones by the same passes, with the Tombstone's `key`, `amountCents` and `cadenceAssumed`. Matching is one-to-one.
 - **Blocked subscription**: An unmatched subscription whose Triple is shared by a Tracked charge or Tombstone that is also left unmatched. Matching cannot tell which one it is, so it is not reported (Requirement 5.3).
+
+  > **Amended by design review 1 #2** (`review-design-1.md`): matching runs over all of Core's subscriptions, active and ended, so an ended series takes its own record; only active subscriptions are reported or blocked. A Tracked charge blocks only when its `lastSeenScan` is the previous scan; a Tombstone blocks only when it was left unmatched because two or more subscriptions qualified for it. Older unmatched records block nothing.
 - **Scan summary**: What `scan_statements` returns (Requirement 5). Only summaries, never rows.
 - **Display name**: The subscription's `merchant`, trimmed, with runs of white space collapsed to one space and, WHEN longer than 80 code points, cut to 79 code points followed by "…", so it is never longer than 80 code points.
 - **Money text**: An amount formatted at the edge from integer cents and an ISO 4217 code with `Intl.NumberFormat("en-US", { style: "currency", currency })`, for example "$17.99" or "£4.99".
@@ -126,12 +141,27 @@ Check these on the local Crew 0.12.2 before writing `design.md`:
 
 1. THE repo root SHALL hold `app.json` with `name: "zombills-reaper"`, a semver `version` starting at `0.1.0`, `displayName: "The Reaper"` and a one-sentence `description`.
 2. `app.json` SHALL declare exactly one stdio MCP server under `mcpServers`, named `reaper`, with `command: "node"`, `args: ["${HOME}/.kiro/crew/apps/zombills-reaper/mcp/dist/server.js"]` and no `env`.
+
+   > **Amended by spike 2026-11-17** (`spike-2026-11-17.md`): the server entry is `{ "command": "/bin/sh", "args": ["-c", "exec node \"$HOME/.kiro/crew/apps/zombills-reaper/mcp/dist/server.js\""] }` with no `env` and no `autoApprove` (an `autoApprove` key made the server not mount, 5/5 runs).
+
 3. `app.json` SHALL declare one agent (Requirement 8), one cron (Requirement 10), one UI entry with one page (Requirement 12) and one backend `{ entryPoint: "backend/dist/server.js", type: "node", port: "auto", healthCheck: "/api/health" }` (Requirement 11).
+
+   > **Amended by spike 2026-11-17** (`spike-2026-11-17.md`): `app.json` also declares `"skills": ["skills/reaper"]`, the manifest field Crew uses to register a skill directory (`apps/manifest.py`, `skills`).
+
 4. THE app SHALL run from the committed bundles of Requirement 2.8 with no install step. `setup.onInstall` SHALL be absent, because a local-path install does not run it. Nothing in the installed copy SHALL depend on `node_modules`.
 5. `setup.configSchema` SHALL be a JSON Schema with one required string property `statementsFolder` and a `description` that says the folder is read in place and that, in Crew 0.12.2, the value is set through the Reaper agent or by editing `settings.json` (Introduction, "Decisions").
 6. `permissions` SHALL be exactly `{ "cron": true, "mcpTools": ["send_message"] }`. `permissions.api` SHALL be absent.
+
+   > **Amended by spike 2026-11-17** (`spike-2026-11-17.md`): `permissions` SHALL be exactly `{ "cron": true, "mcpTools": ["send_message"], "api": ["/apps/zombills-reaper/api"] }`. The `api` entry has no trailing slash (`/apps/<app>/api/` never matches). Changing it needed no re-approval.
+
 7. `app.json` SHALL contain no token, chat id, API key, user name or statements path. The literal `${HOME}` in Criterion 2 is the only path prefix.
+
+   > **Amended by spike 2026-11-17** (`spike-2026-11-17.md`): the literal `$HOME` inside the `/bin/sh -c` string of Criterion 2 replaces `${HOME}` as the only path prefix.
+
 8. A unit test SHALL parse `app.json` and check Criteria 1 to 7 (including the exact `permissions` object), and that every file the manifest names (agent file, UI entry, backend entry point, MCP script under the App root) is committed.
+
+   > **Amended by spike 2026-11-17** (`spike-2026-11-17.md`): the MCP script is found by extracting the quoted path after `exec node` in the `-c` string and replacing `$HOME/.kiro/crew/apps/zombills-reaper/` with the repo root.
+
 
 ### Requirement 2: Vendoring `@zombills/core` and the committed bundles (Must)
 
@@ -145,6 +175,8 @@ Check these on the local Crew 0.12.2 before writing `design.md`:
 4. THE script SHALL fail with a clear message, and leave `vendor/zombills-core/` unchanged, WHEN the path is not a Zombills repo, the build fails, or the `papaparse` version in Core's `package.json` differs from the one in this repo's `package.json`.
 5. THE copy SHALL be real files. THE script SHALL NOT create a symlink, download anything or publish anything.
 6. This repo's `package.json` SHALL have an empty (or absent) `dependencies`. `"@zombills/core": "file:./vendor/zombills-core"`, `papaparse` at the exact version Core names (5.7.1 today) and every other library SHALL be `devDependencies`, inlined into the bundles at build time.
+
+   > **Amended by design review 1 #4** (`review-design-1.md`): Crew runs `npm install --production --no-audit --no-fund` in the App root at backend start (`apps/backend.py:958-998`). `package-lock.json` SHALL be committed, and the root `package.json` SHALL have no lifecycle scripts (`preinstall`, `install`, `postinstall`, `prepare` and the like). The manifest test checks both.
 7. `vendor/zombills-core/` SHALL be committed and never edited by hand. *(Should)* A unit test SHALL check that `SOURCE` exists and holds a 40-character hex hash, optionally followed by `-dirty`.
 8. `npm run build` SHALL use esbuild to produce three single-file ESM bundles, each committed: `mcp/dist/server.js` and `backend/dist/server.js` (platform `node`, target Node 22, every import inlined except `node:` built-ins) and `ui/dist/index.mjs` (platform `browser`, with `react`, `react-dom`, `lucide-react` and `@kirocrew/app-sdk` external and everything else inlined). The build SHALL be deterministic, and the MCP bundle SHALL embed the Core `SOURCE` hash (Requirement 7.11).
 9. A CI-style test SHALL rebuild the three bundles into a temporary directory and fail WHEN any differs byte for byte from the committed file, so committed bundles are always up to date with the source.
@@ -192,11 +224,20 @@ Check these on the local Crew 0.12.2 before writing `design.md`:
 6. *(Should)* `risenAfterBurial` SHALL list `{ key, name, currency, amountCents, buriedAt, lastChargeDate }` for each subscription that matches a Tombstone (not a Blocked subscription) and whose `lastChargeDate` is more than 3 days after the Tombstone's `buriedAt`, to allow for posting lag, and after its `risenReportedThrough` when that is not `null`. This tells the user a buried service is still charging. THE scan SHALL then set the Tombstone's `risenReportedThrough` to that `lastChargeDate`, so each later charge is reported once.
 7. `yearlyTotals` SHALL be `{ [currency]: { yearlyCostCents, guessedCount } }`: `yearlyCostCents` is the sum of `yearlyCostCents` of that currency's `undead` entries whose `cadenceAssumed` is `false`, and `guessedCount` the number left out because their cadence is guessed. Amounts are never added across currencies.
 8. THE result SHALL contain no transaction row, description, balance, account number, file name, full path or one-off purchase. Every string in it SHALL be a Core id or key, a Display name, an ISO currency code, a cadence, a label, an ISO date, `folderName` or a reason code.
+
+   > **Amended by design review 1 #3** (`review-design-1.md`): no tool result SHALL hold a Core id, a `key` or a `merchantKey`, because for an unidentified merchant they keep description residue (phone numbers, references) that the Display name hides. Where an entry needs an identifier it carries `ref`, the first 12 hex characters of the sha256 of its key. The allowed strings are therefore a `ref`, a Display name, an ISO currency code, a cadence, a label, an ISO date, `folderName`, the `scanId` or a reason code. This replaces `key` with `ref` in the entries of Criteria 2, 4, 5 and 6, and in the `tombstone` of Requirement 6.2 and the Tombstones of Requirement 6.8, which also leave out `merchantKey`. `key` and `merchantKey` stay in the History. Property 5.11 (P4) also covers unidentified merchants with residue in their key.
+
 9. `ok: false` reasons SHALL be `"not-configured"`, `"folder-missing"`, `"no-statements"` (no Statement file was read successfully), `"history-unreadable"`, `"history-newer"` and `"history-busy"` (Requirement 7). On `ok: false` THE History SHALL NOT change.
+
+   > **Amended by design review 1 #11** (`review-design-1.md`): every tool may also return `"internal-error"` when a handler throws; the result then carries no message or stack trace.
 10. *(PBT: re-scan is quiet)* FOR ALL statement sets, scanning twice in a row with no file change SHALL give a second Scan summary whose `newUndead`, `possessed`, `trialTraps` and `risenAfterBurial` are empty, and whose `undead` and `yearlyTotals` equal the first.
 11. *(PBT: summaries only)* FOR ALL generated statements in which every description holds a unique marker string, and every one-off amount differs from every recurring amount and every yearly cost, no marker SHALL appear in the JSON of the Scan summary unless Core's normaliser kept it in the `merchant` of a recurring charge; and no balance or one-off amount SHALL appear.
 12. *(PBT: totals)* FOR ALL Scan summaries, each `yearlyTotals[c]` SHALL equal the sums defined in Criterion 7, and each entry's `yearlyCostCents` SHALL equal the `yearlyCostCents` of the Core subscription it came from.
 13. AFTER a successful scan, THE History SHALL be updated in one write (Requirement 7.6): each matched `undead` entry updates its Tracked charge (`key`, `amountCents`, `cadenceAssumed`, `lastSeenScan`, `reportedRiseDate`); each unmatched entry that is not a Blocked subscription adds a new one; a Blocked subscription changes nothing; Tracked charges not seen are kept unchanged; a Scan record `{ scanId, scannedAt, statementRange, undeadCount, yearlyTotals, newCount, possessedCount }` is appended. Matching follows the Glossary "Match" passes, so no Tracked charge or Tombstone is matched by more than one subscription per scan and no tie-breaker picks between candidates.
+
+   > **Amended by design review 1 #1** (`review-design-1.md`): a new Tracked charge SHALL record `reportedRiseDate` = its current `latestRise.date` (or `null`) on every scan, not only on a first scan, so a charge that is already possessed when first seen is reported once as new undead and not as possessed on the next scan.
+
+   > **Amended by design review 1 #2** (`review-design-1.md`): matching runs over active and ended subscriptions (Glossary "Blocked subscription"). A pair with an ended subscription only updates the record's `key`, not its `lastSeenScan`; an unmatched ended subscription adds nothing.
 
 ### Requirement 6: Burying, unburying and the graveyard (Must; `unbury` Should)
 
@@ -205,7 +246,12 @@ Check these on the local Crew 0.12.2 before writing `design.md`:
 #### Acceptance Criteria
 
 1. THE MCP tool `bury` SHALL take `{ service: string }` and resolve it against the **Current charges**, the Tracked charges whose `lastSeenScan` is the latest successful scan, comparing with Name folding: first to `serviceId`, then to the Display name (`merchant`), then to a Display name that starts with the text. WHEN the text ends with an amount (for example "Spotify 16.99" or "Spotify $16.99"), THE tool SHALL resolve the rest as above and keep only the entries whose `amountCents` equals that amount. WHEN no scan has succeeded yet, `bury` SHALL return `{ ok: false, reason: "no-scan" }`. Text longer than 200 code points SHALL return `{ ok: false, reason: "not-found", candidates: [] }`.
+
+   > **Amended by design review 1 #9** (`review-design-1.md`): the whole text is resolved as a name first; a trailing amount is split off only when that finds nothing, so "bury Xbox 360" finds "Xbox 360".
+
 2. WHEN exactly one entry matches, `bury` SHALL add a Tombstone `{ key, name, serviceId, currency, cadence, amountCents, cadenceAssumed, yearlySavingCents, buriedAt, risenReportedThrough: null }`, with `buriedAt` today's local date (`yyyy-mm-dd`) and `yearlySavingCents` = `amountCents × Cadence factor`, or `null` WHEN the cadence is guessed. It SHALL return `{ ok: true, tombstone, cancel }`.
+
+   > **Amended by design review 1 #11** (`review-design-1.md`): the Tombstone also holds `merchantKey`, needed for its Triple in the Glossary "Match". `bury` and `unbury` also return `historyReset` and `historyDropped` when their own History load reset the file or dropped records (Requirement 7.3, 7.4). The returned `tombstone` follows the amendment to Requirement 5.8 (`ref`, no `key` or `merchantKey`).
 3. `cancel` SHALL come from Core's `getCancelHelp(serviceId, currency)`: WHEN its kind is `"link"`, `{ kind: "link", url, host, steps, appStoreMayApply }`; otherwise `{ kind: "email", subject, body, mailto }` built with `cancellationEmail` (Money text for `amountText`) and `mailtoHref`. THE Reaper SHALL NOT open the link, log in anywhere or send the email.
 4. WHEN no entry matches, `bury` SHALL return `{ ok: false, reason: "not-found", candidates }`; WHEN several match, `{ ok: false, reason: "ambiguous", candidates }`. `candidates` SHALL hold at most 5 entries `{ name, amountText, cadence }` (Display name, Money text, cadence), taken only from the Current charges, closest first, so two services with the same name can be told apart. THE Reaper SHALL never name a service the statements do not contain.
 5. WHEN the entry already matches a Tombstone by the Glossary "Match" rule, `bury` SHALL return that Tombstone and the `cancel` draft again, with `alreadyBuried: true`, and add nothing.
@@ -223,8 +269,12 @@ Check these on the local Crew 0.12.2 before writing `design.md`:
 #### Acceptance Criteria
 
 1. THE History SHALL be `{ version: 1, coreSource, trackedCharges, tombstones, scans, reportedTrials }` stored as JSON in the History file, with money in integer cents and dates as ISO strings. It SHALL hold only the fields named in the Glossary and Requirements 5.13 and 6.2. `reportedTrials` holds the `key`s already reported as trial traps; `coreSource` is the Core `SOURCE` hash of the last scan (Criterion 11).
+
+   > **Amended by design review 1 #11** (`review-design-1.md`): a Tombstone also holds `merchantKey` (Requirement 6.2).
 2. WHEN the History file is missing, THE Reaper SHALL treat the History as empty (`firstScan` true).
 3. WHEN the History file is not JSON, not an object, has a `version` that is missing, not an integer or less than 1, or has `version` 1 and fails the schema check, THE Reaper SHALL rename it to `history.unreadable-<yyyymmddThhmmss>.json` in the Data dir, keep at most the 3 newest such files, start from an empty History and report `historyReset: true` in the next Scan summary, so the agent can tell the user their graveyard had to be started again.
+
+   > **Amended by design review 1 #11** (`review-design-1.md`): WHEN the reset (or the drop of Criterion 4) happens during a `bury` or `unbury`, that tool reports it in its own result, and the next Scan summary reports `false` / `0`.
 4. *(Should; without it any failing record triggers Criterion 3)* The schema check SHALL drop, not reject the file for, an individual Tracked charge, Tombstone or Scan record that fails its own check (wrong types, non-integer or negative cents, bad date, unknown cadence, merchant over 80 code points), and SHALL report the number dropped as `historyDropped` in the next Scan summary. Before the first write that drops records, THE Reaper SHALL copy the original file to `history.backup-<yyyymmddThhmmss>.json`, keeping at most the 3 newest.
 5. WHEN `version` is an integer greater than 1, every tool SHALL return `{ ok: false, reason: "history-newer" }` and SHALL NOT write or rename the file.
 6. Every write of the History or Settings file SHALL write the full JSON to a temporary file in the Data dir, `fsync` it, and rename it over the target, so a reader never sees a half-written file. Each read-modify-write of the History SHALL hold a cross-process lock: `history.lock` in the Data dir, created with `O_CREAT | O_EXCL`, removed when done, and taken over WHEN older than a stale timeout set in design. WHEN the lock cannot be taken within a wait time set in design, the tool SHALL return `{ ok: false, reason: "history-busy" }` and change nothing. A test SHALL run a scan and a `bury` in two processes at once and check that neither update is lost.
@@ -241,6 +291,9 @@ Check these on the local Crew 0.12.2 before writing `design.md`:
 #### Acceptance Criteria
 
 1. `agents/reaper.json` SHALL define the agent `reaper` with a `description`, a `prompt` and `tools` limited to `@kirocrew-core` (for `send_message`) and the Reaper MCP server's five tools. It SHALL have no `model` field, so Crew's default model is used.
+
+   > **Amended by spike 2026-11-17** (`spike-2026-11-17.md`): `tools` SHALL be exactly `["@kirocrew-core", "@zombills-reaper:reaper"]` (app servers are namespaced `<app>:<server>`; `@reaper` dangles silently) and the agent SHALL have `allowedTools` holding `"@zombills-reaper:reaper"`, because a mounted tool that is only in `tools` is rejected in an unattended cron run. Whether `send_message` also needs an `allowedTools` entry is part of the Telegram test (design, "Telegram test"). Crew materialises the agent as `~/.kiro/agents/zombills-reaper--reaper.json` and adds a `managedToolPolicy.exclude` list.
+
 2. THE prompt SHALL tell the agent to: use only the Reaper MCP tools for statement facts; never read, list or search the Statements folder, the Data dir or any statement file with `read`, `glob`, `grep` or any tool other than the Reaper MCP tools; never paste a tool result as raw JSON into a chat; never send the folder path anywhere; and follow the skill of Requirement 9.
 3. THE agent SHALL NOT be granted shell, file-write, web fetch or web search tools. Because Crew mounts `read`, `glob` and `grep` into every agent regardless (Introduction, "Privacy"), Criterion 2 is enforced by instructions, not by Crew. THE live spike (Open question 5) SHALL list the agent's real tool surface from the materialized `~/.kiro/agents/zombills-reaper--reaper.json`, and design and the README SHALL record it and name any file tool present as a limit only the prompt guards.
 4. `app.json` `agents[]` SHALL reference this file by path, and a unit test SHALL check that its `tools` list holds nothing beyond Criterion 1 and that the prompt holds the prohibitions of Criterion 2.
@@ -283,6 +336,9 @@ Check these on the local Crew 0.12.2 before writing `design.md`:
 #### Acceptance Criteria
 
 1. `app.json` `crons[]` SHALL hold one entry `{ name: "monthly-scan", cron_expr: "0 9 1 * *", agent: "reaper", message, silent: true, strict_schedule: true, persistent_session: false, enabled: true }` with no `timezone`, so it fires at 09:00 on the 1st in the zone set in Crew (then UTC), with no random start delay and no context carried between months. The `agent` value SHALL be the name Crew resolves to this app's agent; the 0.12.2 source registers app agents as `zombills-reaper/reaper` (`apps/bridges_agents.py`) and passes the cron's `agent` through unchanged (`apps/bridges_crons.py`), so design SHALL confirm on a real install whether the bare or the namespaced name works.
+
+   > **Amended by spike 2026-11-17** (`spike-2026-11-17.md`): the bare name `reaper` works: the manifest `"agent": "spike"` became cron `agent_id: "spike"` and ran with that agent. The cron is named `zombills-reaper/monthly-scan`.
+
 2. `message` SHALL ask the agent to run the monthly round of the `reaper` skill. It SHALL hold no path, name or amount.
 3. THE README SHALL document running it now: `kirocrew cron list` to find the id of `zombills-reaper/monthly-scan`, then `kirocrew cron trigger <id>`; and, as an alternative, sending "scan my statements" to the Reaper agent, which runs the same flow.
 4. A unit test SHALL check Criteria 1 and 2 against `app.json`.
@@ -297,11 +353,17 @@ Check these on the local Crew 0.12.2 before writing `design.md`:
 2. WHEN `PORT` is not an integer from 1 to 65535, or `KIROCREW_PROXY_SECRET` is missing or empty, THE backend SHALL log one line naming which variable is wrong (never its value) and exit with a non-zero code.
 3. `GET /api/health` SHALL return `200 {"ok":true}` without the Proxy check and SHALL hold no other data.
 4. Every other request SHALL pass the Proxy check before any file is read: the `X-KiroCrew-Proxy` header is `<ts>:<hex>`; `<ts>` is an integer within 60 seconds of the server clock; and `<hex>` equals HMAC-SHA256(`KIROCREW_PROXY_SECRET`, `<ts>:<METHOD>:<raw request target>:<sha256 hex of the body>`), compared in constant time. On failure THE backend SHALL return `401 {"error":"unauthorized"}`.
+
+   > **Amended by spike 2026-11-17** (`spike-2026-11-17.md`): the Proxy check verifies the **v2** scheme: headers `X-KiroCrew-Proxy-Nonce` (exactly 32 lowercase hex) and `X-KiroCrew-Proxy-V2: <ts>:<hex>` with `<ts>` ASCII digits (at most 12), within ±60 s of the server clock, and `<hex>` = HMAC-SHA256(secret, `v2:<ts>:<nonce>:<METHOD>:<raw request target>:<sha256 hex of body>`), compared in constant time, and the nonce accepted at most once by a process-lifetime replay cache. The v1 header is ignored. Exact algorithm in design ("Proxy check v2").
+
 5. `GET /api/graveyard` SHALL return the `list_graveyard` result of Requirement 6.8 plus `{ lastScan: { scannedAt, statementRange, undeadCount, yearlyTotals } | null }`, computed from the History file by the same shared code the MCP server uses (Requirement 15.2). It SHALL return `{ ok: false, reason }` with `"history-unreadable"` or `"history-newer"` and SHALL NOT rename, repair or write the History file.
 6. THE backend SHALL be read-only: it SHALL NOT write any file, and SHALL answer every method other than `GET` with `405`, and every other path with `404`, both after the Proxy check.
 7. THE backend SHALL NOT read the Statements folder or the Settings file, and SHALL make no outbound request.
 8. Request bodies over 16 KiB SHALL be refused with `413` without being read further.
 9. *(PBT: proxy check)* FOR ALL secrets, methods, targets, bodies and timestamps, the check SHALL accept exactly the header computed by a reference signer from the same values within ±60 s, and SHALL reject any header in which one character of the timestamp or signature differs, the method, target or body differs, or the timestamp is outside the window.
+
+   > **Amended by spike 2026-11-17** (`spike-2026-11-17.md`): the reference signer is the v2 signer; a mutated nonce, a nonce of the wrong shape and a replayed nonce are rejected too.
+
 
 ### Requirement 12: The dashboard page (Should)
 
@@ -310,7 +372,13 @@ Check these on the local Crew 0.12.2 before writing `design.md`:
 #### Acceptance Criteria
 
 1. `ui.entry` SHALL be `"dist/index.mjs"` (relative to `ui/`), the committed esbuild bundle of Requirement 2.8 built from `ui/src`, with `react`, `react-dom`, `lucide-react` and `@kirocrew/app-sdk` external. `ui.pages` SHALL hold one page `{ route: "/graveyard", label: "Graveyard", icon }` with a Lucide icon name chosen in design.
+
+   > **Amended by spike 2026-11-17** (`spike-2026-11-17.md`): the bundle SHALL export a React function component named `mount` (and the same as default); the host renders it as a component, and a DOM-style `mount(el)` crashes. Bare imports of `react` and `@kirocrew/app-sdk` resolve through the host import map; `lucide-react` and `react-dom` were not tested and the page SHALL NOT import them. The page route SHALL be `/apps/zombills-reaper` (the form Crew documents and the spike used), not `/graveyard`.
+
 2. THE page SHALL load its data only with `useAppApi` from `GET /api/graveyard`, and SHALL show a loading state, an error state ("The graveyard could not be read.") with a retry button, and an empty state ("Nothing buried yet. The Reaper checks your statements on the 1st of each month.").
+
+   > **Amended by spike 2026-11-17** (`spike-2026-11-17.md`): the path SHALL be `/apps/zombills-reaper/api/graveyard`; `api.get("/api/…")` is refused as Crew's own namespace.
+
 3. WHEN data is present, THE page SHALL show: the yearly savings per currency (Money text) as the headline; a month-by-month timeline, oldest to newest, of undead count, yearly cost per currency and cumulative savings, as an equivalent table for screen readers and *(Should)* as a chart; the Tombstones, newest first, with name, Money text per charge and cadence, yearly saving and burial date; and the date of the last scan.
 4. A guessed-cadence Tombstone SHALL show "saving not counted (cadence guessed)" and SHALL NOT count in totals.
 5. THE page SHALL load no font, image, style or script from any host. Names SHALL be shown as text only, with no logos.
@@ -337,6 +405,11 @@ Check these on the local Crew 0.12.2 before writing `design.md`:
 #### Acceptance Criteria
 
 1. `README.md` SHALL explain what the Reaper does, the privacy promise in three sentences, and install steps for the local Mac: install Crew 0.12.2, install from local path (`POST http://localhost:5476/api/apps/install {"source": "<path>"}` then enable, or App Store → Install from local path; the committed bundles need no build, and `npm ci && npm run build` is needed only after changing source), connect Telegram in the Crew Gateway, route the Telegram DM to the Reaper agent (Introduction, "Decisions"), set Crew's timezone, and tell the Reaper agent which folder to watch or edit `settings.json` (Requirement 3.6). It SHALL say to keep earlier statements in the folder, because detection needs repeated charges, and that the same charge on two accounts on the same day is counted once (Requirement 4.4). It SHALL state the agent's real tool surface and the limit of Requirement 8.3.
+
+   > **Amended by spike 2026-11-17** (`spike-2026-11-17.md`): install is `kirocrew app install <repo path>`; the CLI refuses to enable a third-party app, so the README SHALL tell the user to enable it in the dashboard (Apps → Library → The Reaper → Enable) and SHALL NOT suggest setting `agent.apps_allow_third_party`. After a source change: `kirocrew app update zombills-reaper`. Telegram routing is `/agent reaper` in the bot chat, pending the Telegram test.
+
+   > **Amended by design review 1 #15** (`review-design-1.md`): the install step SHALL tell the user to check that `<repo>/data` does not exist before installing, because a first install copies the source's `data/` into the installed app (`apps/manager_install.py:385`). Amended by design review 1 #5: the privacy text names the transcript stores of Requirement 15.3.
+
 2. THE README SHALL have a "Later: your own EC2 instance" section for `kirocrew cloud`, saying the statements folder and Data dir then live on that instance, and that the same rules apply (no S3, no log shipping of app data).
 3. THE README SHALL have a demo section: copy `mcp/fixtures/demo/round-1/*.csv` into a new folder, set it as the Statements folder, run the cron now (Requirement 10.3) and see the first count; then copy `mcp/fixtures/demo/round-2/*.csv` in, run it again and see one new undead and one possessed charge; reply "bury <name>" and see the draft.
 4. THE demo files SHALL be fake and anonymised, in the US signed-amount format Core reads with Core's sign convention (positive = money out), with no real person, account number or address. A test SHALL assert Core's `detectedSignConvention` for each demo file, then scan round 1, then round 1 plus round 2, against a fresh History, and SHALL assert `firstScan` on the first, and exactly one `newUndead` and one `possessed` entry on the second, naming services from the cancel-helper data so that one bury gives a link and the README shows an email case too.
@@ -351,12 +424,19 @@ Check these on the local Crew 0.12.2 before writing `design.md`:
 
 1. THE repo SHALL follow `structure.md`: `app.json`, `agents/`, `skills/`, `mcp/src/`, `backend/src/`, `ui/src/`, `vendor/zombills-core/`, `scripts/`, `mcp/fixtures/`. Files are kebab-case; MCP tool names are snake_case. `.kiro/` SHALL NOT be gitignored.
 2. THE History types and codec, the Settings codec, the graveyard summary of Requirement 6.8 and the Money text formatter SHALL live in one shared module imported by `mcp/`, `backend/` and `ui/` (types only in `ui/`). Its location is decided in design.
+
+   > **Amended by design review 1 #11** (`review-design-1.md`): `ui/` imports the types and the Money text formatter (`moneyText`), so the page formats amounts exactly as the alerts do.
 3. THE steering files SHALL be corrected in the same change, citing the source paths of the Introduction:
    - `tech.md` and `privacy.md`: replace `X-Crew-Proxy` with `X-KiroCrew-Proxy`.
+
+     > **Amended by spike 2026-11-17** (`spike-2026-11-17.md`): the backend verifies `X-KiroCrew-Proxy-V2` with `X-KiroCrew-Proxy-Nonce`; `tech.md` also records the `/bin/sh -c` MCP launch, `@<app>:<server>` tool references with `allowedTools`, no `autoApprove`, `permissions.api` without trailing slash, the page exporting a React component `mount`, and enabling third-party apps in the dashboard.
+
    - `tech.md`: `setup.configSchema` values do not reach apps in 0.12.2; how stdio MCP servers are launched (session cwd, stripped env, `${HOME}` expansion in `args`); the backend env (`PORT`, `KIROCREW_PROXY_SECRET`, cwd = App root); crons may set `silent`, `timezone`, `strict_schedule` (without it, a random start delay of up to 59 minutes) and `persistent_session`; `agents[]` holds paths, not objects; `onInstall` does not run on a local-path install and `onUpdate` is never dispatched; `node_modules` is dropped from the installed copy, hence the committed esbuild bundles with zero runtime `dependencies` (replacing "Vite library build" and "`onInstall` must install dependencies and build"); `permissions.cron` is required when `crons` is declared; `permissions.mcpTools` is enforced; `ui.entry` is relative to `ui/`.
    - `structure.md`: the MCP tool list (`scan-statements`, `draft-cancellation`) becomes the five tools of this spec.
    - `product.md` and `privacy.md`: replace "statements path lives in app config (`setup.configSchema`)" with the Settings file.
    - `privacy.md`: state that Crew mounts built-in `read`, `glob` and `grep` into every agent, so "statements are read only through the Reaper MCP tools" is enforced by the agent prompt and skill, not by Crew; note that a path set through the agent reaches the model provider; and add a row for alert text stored by Crew in `~/.kiro/crew/cron-history`.
+
+     > **Amended by design review 1 #5** (`review-design-1.md`): `privacy.md` and the README privacy text SHALL also name the two transcript stores that hold every tool result and any path passed to `set_statements_folder`: kiro-cli's `<kiro home>/sessions/cli/<sid>.jsonl` and Crew's `data_home()/sessions`, as a limit on "summaries only".
 4. THE repo SHALL use TypeScript strict, ESM, Node 22, Vitest and fast-check, ESLint and Prettier as `tech.md` says, with `npm test`, `npm run typecheck`, `npm run lint` and `npm run build` at the root. `npm test` SHALL NOT need the Zombills repo, Crew or a network.
 5. `.gitignore` SHALL ignore `node_modules/`, temporary build output and any local `data/` folder, and SHALL NOT ignore `vendor/`, `.kiro/` or the committed bundles `mcp/dist/server.js`, `backend/dist/server.js` and `ui/dist/index.mjs`.
 
