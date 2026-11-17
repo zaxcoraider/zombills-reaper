@@ -1,54 +1,34 @@
-// Skeleton of `bury` (design "`bury`"). Task 18 replaces it with the locked, validated version.
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
-import { join } from "node:path";
-import { foldName } from "../../shared/src/display-name.ts";
+// `bury` (design "`bury`"): resolves the service text against the Current charges, checks the
+// Tombstones through `matchRecords`, and writes one Tombstone under the lock.
 import { localDate } from "../../shared/src/local-date.ts";
 import { CADENCE_FACTOR, moneyText } from "../../shared/src/money.ts";
 import { refOf } from "../../shared/src/ref.ts";
 import type {
   CancelDraft,
   Candidate,
-  History,
   ScanRecord,
   ToolResult,
   Tombstone,
   TombstoneView,
   TrackedCharge,
 } from "../../shared/src/types.ts";
+import type { Cadence } from "@zombills/core";
 import { cancelDraft } from "./cancel-draft.js";
+import { ensureDataDir } from "./data-files.js";
+import { withHistoryLock } from "./history-lock.js";
+import { loadHistoryForWrite, saveHistory } from "./history-store.js";
 import { logCounts } from "./log.js";
+import { matchRecords } from "./match.js";
+import { resolveService } from "./resolve-service.js";
 import type { ToolContext } from "./tools.js";
 
 export interface BuryResult {
   tombstone: TombstoneView;
   cancel: CancelDraft;
   alreadyBuried: boolean;
-}
-
-function isHistory(value: unknown): value is History {
-  // Interim check: this file is only written by the skeleton scan and bury. Task 12 adds the
-  // History codec that validates every record.
-  return (
-    typeof value === "object" &&
-    value !== null &&
-    "version" in value &&
-    value.version === 1 &&
-    "trackedCharges" in value &&
-    Array.isArray(value.trackedCharges) &&
-    "tombstones" in value &&
-    Array.isArray(value.tombstones) &&
-    "scans" in value &&
-    Array.isArray(value.scans)
-  );
-}
-
-async function readHistory(path: string): Promise<History | null> {
-  try {
-    const parsed: unknown = JSON.parse(await readFile(path, "utf8"));
-    return isHistory(parsed) ? parsed : null;
-  } catch {
-    return null;
-  }
+  /** Set only when this call's own load reset or dropped records (Req 7.3). */
+  historyReset?: true;
+  historyDropped?: number;
 }
 
 function viewOf(t: Tombstone): TombstoneView {
@@ -66,7 +46,12 @@ function viewOf(t: Tombstone): TombstoneView {
   };
 }
 
-function candidateOf(c: TrackedCharge): Candidate {
+export function candidateOf(c: {
+  merchant: string;
+  amountCents: number;
+  currency: string;
+  cadence: Cadence;
+}): Candidate {
   return {
     name: c.merchant,
     amountText: moneyText(c.amountCents, c.currency),
@@ -74,70 +59,96 @@ function candidateOf(c: TrackedCharge): Candidate {
   };
 }
 
-function resolve(text: string, charges: TrackedCharge[]): TrackedCharge[] {
-  const q = foldName(text);
-  if (q === "") return [];
-  const byServiceId = charges.filter((c) => c.serviceId !== null && foldName(c.serviceId) === q);
-  if (byServiceId.length > 0) return byServiceId;
-  return charges.filter((c) => foldName(c.merchant) === q);
+/** Tracked charges seen in the last scan (design "Current charges"). */
+export function currentCharges(history: {
+  scans: ScanRecord[];
+  trackedCharges: TrackedCharge[];
+}): TrackedCharge[] {
+  const last = history.scans[history.scans.length - 1];
+  if (last === undefined) return [];
+  return history.trackedCharges.filter((c) => c.lastSeenScan === last.scanId);
 }
 
 export async function bury(
   context: ToolContext,
   args: { service: string },
 ): Promise<ToolResult<BuryResult>> {
-  const historyPath = join(context.dataDir, "history.json");
-  const history = await readHistory(historyPath);
-  const lastScan: ScanRecord | undefined = history?.scans[history.scans.length - 1];
-  if (history === null || lastScan === undefined) return { ok: false, reason: "no-scan" };
+  await ensureDataDir(context.dataDir);
+  const result = await withHistoryLock(
+    context.dataDir,
+    async (): Promise<ToolResult<BuryResult>> => {
+      const loaded = await loadHistoryForWrite(context.dataDir, context.now());
+      if ("error" in loaded) return { ok: false, reason: loaded.error };
+      const { history } = loaded;
+      const notes: Pick<BuryResult, "historyReset" | "historyDropped"> = {
+        ...(loaded.reset ? { historyReset: true as const } : {}),
+        ...(loaded.dropped > 0 ? { historyDropped: loaded.dropped } : {}),
+      };
+      const lastScan: ScanRecord | undefined = history.scans[history.scans.length - 1];
+      if (lastScan === undefined) return { ok: false, reason: "no-scan" };
 
-  const current = history.trackedCharges.filter((c) => c.lastSeenScan === lastScan.scanId);
-  const hits = resolve(args.service, current);
-  if (hits.length === 0) {
-    logCounts("bury", { found: 0, already: 0 });
-    return { ok: false, reason: "not-found", candidates: [] };
-  }
-  const [t] = hits;
-  if (t === undefined || hits.length > 1) {
-    logCounts("bury", { found: hits.length, already: 0 });
-    return { ok: false, reason: "ambiguous", candidates: hits.slice(0, 5).map(candidateOf) };
-  }
+      const resolution = resolveService(args.service, currentCharges(history));
+      if (resolution.kind !== "one") {
+        const found = resolution.kind === "several" ? resolution.candidates.length : 0;
+        logCounts("bury", { found, already: 0 });
+        return {
+          ok: false,
+          reason: resolution.kind === "several" ? "ambiguous" : "not-found",
+          candidates: resolution.candidates.map(candidateOf),
+        };
+      }
+      const t = resolution.entry;
 
-  const existing = history.tombstones.find((tomb) => tomb.key === t.key);
-  if (existing !== undefined) {
-    logCounts("bury", { found: 1, already: 1 });
-    return {
-      ok: true,
-      tombstone: viewOf(existing),
-      cancel: cancelDraft(existing),
-      alreadyBuried: true,
-    };
-  }
+      const asSub = {
+        id: t.key,
+        currency: t.currency,
+        cadence: t.cadence,
+        merchantKey: t.merchantKey,
+        priceHistory: [{ amountCents: t.amountCents }],
+        evidence: { cadenceAssumed: t.cadenceAssumed },
+      };
+      const tombMatch = matchRecords([asSub], history.tombstones, lastScan.scanId);
+      const existing = tombMatch.pairs.get(t.key);
+      if (existing !== undefined) {
+        logCounts("bury", { found: 1, already: 1 });
+        return {
+          ok: true,
+          tombstone: viewOf(existing),
+          cancel: cancelDraft(existing),
+          alreadyBuried: true,
+          ...notes,
+        };
+      }
 
-  const tombstone: Tombstone = {
-    key: t.key,
-    name: t.merchant,
-    serviceId: t.serviceId,
-    currency: t.currency,
-    cadence: t.cadence,
-    merchantKey: t.merchantKey,
-    amountCents: t.amountCents,
-    cadenceAssumed: t.cadenceAssumed,
-    yearlySavingCents: t.cadenceAssumed ? null : t.amountCents * CADENCE_FACTOR[t.cadence],
-    buriedAt: localDate(context.now(), context.timeZone),
-    risenReportedThrough: null,
-  };
-  const next: History = { ...history, tombstones: [...history.tombstones, tombstone] };
-  await mkdir(context.dataDir, { recursive: true, mode: 0o700 });
-  const tmpPath = `${historyPath}.tmp-${process.pid}`;
-  await writeFile(tmpPath, JSON.stringify(next), { mode: 0o600 });
-  await rename(tmpPath, historyPath);
+      const tombstone: Tombstone = {
+        key: t.key,
+        name: t.merchant,
+        serviceId: t.serviceId,
+        currency: t.currency,
+        cadence: t.cadence,
+        merchantKey: t.merchantKey,
+        amountCents: t.amountCents,
+        cadenceAssumed: t.cadenceAssumed,
+        yearlySavingCents: t.cadenceAssumed ? null : t.amountCents * CADENCE_FACTOR[t.cadence],
+        buriedAt: localDate(context.now(), context.timeZone),
+        risenReportedThrough: null,
+      };
+      await saveHistory(context.dataDir, {
+        ...history,
+        tombstones: [...history.tombstones, tombstone],
+      });
 
-  logCounts("bury", { found: 1, already: 0 });
-  return {
-    ok: true,
-    tombstone: viewOf(tombstone),
-    cancel: cancelDraft(tombstone),
-    alreadyBuried: false,
-  };
+      logCounts("bury", { found: 1, already: 0 });
+      return {
+        ok: true,
+        tombstone: viewOf(tombstone),
+        cancel: cancelDraft(tombstone),
+        alreadyBuried: false,
+        ...notes,
+      };
+    },
+    context.lock?.timings,
+    context.lock?.clock,
+  );
+  return result;
 }

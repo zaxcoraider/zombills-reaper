@@ -34,7 +34,13 @@ describe("MCP bundle", () => {
       cwd: tmp,
       env: { PATH: process.env["PATH"] },
     });
-    expect((await client.listTools()).sort()).toEqual(["bury", "scan_statements"]);
+    expect((await client.listTools()).sort()).toEqual([
+      "bury",
+      "list_graveyard",
+      "scan_statements",
+      "set_statements_folder",
+      "unbury",
+    ]);
     const result = await client.callTool("scan_statements");
     expect(result.isError).toBe(false);
     expect(result.value).toEqual({ ok: false, reason: "not-configured" });

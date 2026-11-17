@@ -416,11 +416,11 @@ var require_codegen = __commonJS({
         const rhs = this.rhs === void 0 ? "" : ` = ${this.rhs}`;
         return `${varKind} ${this.name}${rhs};` + _n;
       }
-      optimizeNames(names, constants) {
+      optimizeNames(names, constants3) {
         if (!names[this.name.str])
           return;
         if (this.rhs)
-          this.rhs = optimizeExpr(this.rhs, names, constants);
+          this.rhs = optimizeExpr(this.rhs, names, constants3);
         return this;
       }
       get names() {
@@ -437,10 +437,10 @@ var require_codegen = __commonJS({
       render({ _n }) {
         return `${this.lhs} = ${this.rhs};` + _n;
       }
-      optimizeNames(names, constants) {
+      optimizeNames(names, constants3) {
         if (this.lhs instanceof code_1.Name && !names[this.lhs.str] && !this.sideEffects)
           return;
-        this.rhs = optimizeExpr(this.rhs, names, constants);
+        this.rhs = optimizeExpr(this.rhs, names, constants3);
         return this;
       }
       get names() {
@@ -501,8 +501,8 @@ var require_codegen = __commonJS({
       optimizeNodes() {
         return `${this.code}` ? this : void 0;
       }
-      optimizeNames(names, constants) {
-        this.code = optimizeExpr(this.code, names, constants);
+      optimizeNames(names, constants3) {
+        this.code = optimizeExpr(this.code, names, constants3);
         return this;
       }
       get names() {
@@ -531,12 +531,12 @@ var require_codegen = __commonJS({
         }
         return nodes.length > 0 ? this : void 0;
       }
-      optimizeNames(names, constants) {
+      optimizeNames(names, constants3) {
         const { nodes } = this;
         let i = nodes.length;
         while (i--) {
           const n = nodes[i];
-          if (n.optimizeNames(names, constants))
+          if (n.optimizeNames(names, constants3))
             continue;
           subtractNames(names, n.names);
           nodes.splice(i, 1);
@@ -589,12 +589,12 @@ var require_codegen = __commonJS({
           return void 0;
         return this;
       }
-      optimizeNames(names, constants) {
+      optimizeNames(names, constants3) {
         var _a3;
-        this.else = (_a3 = this.else) === null || _a3 === void 0 ? void 0 : _a3.optimizeNames(names, constants);
-        if (!(super.optimizeNames(names, constants) || this.else))
+        this.else = (_a3 = this.else) === null || _a3 === void 0 ? void 0 : _a3.optimizeNames(names, constants3);
+        if (!(super.optimizeNames(names, constants3) || this.else))
           return;
-        this.condition = optimizeExpr(this.condition, names, constants);
+        this.condition = optimizeExpr(this.condition, names, constants3);
         return this;
       }
       get names() {
@@ -617,10 +617,10 @@ var require_codegen = __commonJS({
       render(opts) {
         return `for(${this.iteration})` + super.render(opts);
       }
-      optimizeNames(names, constants) {
-        if (!super.optimizeNames(names, constants))
+      optimizeNames(names, constants3) {
+        if (!super.optimizeNames(names, constants3))
           return;
-        this.iteration = optimizeExpr(this.iteration, names, constants);
+        this.iteration = optimizeExpr(this.iteration, names, constants3);
         return this;
       }
       get names() {
@@ -656,10 +656,10 @@ var require_codegen = __commonJS({
       render(opts) {
         return `for(${this.varKind} ${this.name} ${this.loop} ${this.iterable})` + super.render(opts);
       }
-      optimizeNames(names, constants) {
-        if (!super.optimizeNames(names, constants))
+      optimizeNames(names, constants3) {
+        if (!super.optimizeNames(names, constants3))
           return;
-        this.iterable = optimizeExpr(this.iterable, names, constants);
+        this.iterable = optimizeExpr(this.iterable, names, constants3);
         return this;
       }
       get names() {
@@ -701,11 +701,11 @@ var require_codegen = __commonJS({
         (_b = this.finally) === null || _b === void 0 ? void 0 : _b.optimizeNodes();
         return this;
       }
-      optimizeNames(names, constants) {
+      optimizeNames(names, constants3) {
         var _a3, _b;
-        super.optimizeNames(names, constants);
-        (_a3 = this.catch) === null || _a3 === void 0 ? void 0 : _a3.optimizeNames(names, constants);
-        (_b = this.finally) === null || _b === void 0 ? void 0 : _b.optimizeNames(names, constants);
+        super.optimizeNames(names, constants3);
+        (_a3 = this.catch) === null || _a3 === void 0 ? void 0 : _a3.optimizeNames(names, constants3);
+        (_b = this.finally) === null || _b === void 0 ? void 0 : _b.optimizeNames(names, constants3);
         return this;
       }
       get names() {
@@ -1006,7 +1006,7 @@ var require_codegen = __commonJS({
     function addExprNames(names, from) {
       return from instanceof code_1._CodeOrName ? addNames(names, from.names) : names;
     }
-    function optimizeExpr(expr, names, constants) {
+    function optimizeExpr(expr, names, constants3) {
       if (expr instanceof code_1.Name)
         return replaceName(expr);
       if (!canOptimize(expr))
@@ -1021,14 +1021,14 @@ var require_codegen = __commonJS({
         return items;
       }, []));
       function replaceName(n) {
-        const c = constants[n.str];
+        const c = constants3[n.str];
         if (c === void 0 || names[n.str] !== 1)
           return n;
         delete names[n.str];
         return c;
       }
       function canOptimize(e) {
-        return e instanceof code_1._Code && e._items.some((c) => c instanceof code_1.Name && names[c.str] === 1 && constants[c.str] !== void 0);
+        return e instanceof code_1._Code && e._items.some((c) => c instanceof code_1.Name && names[c.str] === 1 && constants3[c.str] !== void 0);
       }
     }
     function subtractNames(names, from) {
@@ -7019,10 +7019,10 @@ var require_formats = __commonJS({
     function isLeapYear2(year) {
       return year % 4 === 0 && (year % 100 !== 0 || year % 400 === 0);
     }
-    var DATE = /^(\d\d\d\d)-(\d\d)-(\d\d)$/;
+    var DATE2 = /^(\d\d\d\d)-(\d\d)-(\d\d)$/;
     var DAYS = [0, 31, 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
     function date5(str) {
-      const matches = DATE.exec(str);
+      const matches = DATE2.exec(str);
       if (!matches)
         return false;
       const year = +matches[1];
@@ -13655,12 +13655,12 @@ function $constructor(name, initializer3, proto, params) {
     inst._zod.traits.add(name);
     initializer3(inst, def);
     if (initialized) {
-      const own2 = Object.getPrototypeOf(inst);
+      const own3 = Object.getPrototypeOf(inst);
       const ctorProto = inst._zod.constr.prototype;
-      let up = own2;
+      let up = own3;
       while (up && up !== ctorProto)
         up = Object.getPrototypeOf(up);
-      const target = up ?? own2;
+      const target = up ?? own3;
       if (!initialized.has(target)) {
         initialized.add(target);
         members(target, protoMembers);
@@ -17018,20 +17018,20 @@ function leafPattern(schema) {
     return "(?!)";
   if (minimum !== void 0 || maximum !== void 0)
     return string({ minimum, maximum }).source;
-  const own2 = schema._zod.pattern;
-  return (isInt && own2 === number ? integer : own2)?.source;
+  const own3 = schema._zod.pattern;
+  return (isInt && own3 === number ? integer : own3)?.source;
 }
 function partPattern(schema) {
   const def = schema._zod.def;
-  const own2 = schema._zod.pattern?.source;
+  const own3 = schema._zod.pattern?.source;
   const inner = def.innerType ?? schema._zod.innerType;
   if (inner) {
     const before = inner._zod.pattern?.source;
     const after = partPattern(inner);
-    if (own2 && before && after && after !== before) {
-      return own2.replace(cleanRegex(before), () => cleanRegex(after));
+    if (own3 && before && after && after !== before) {
+      return own3.replace(cleanRegex(before), () => cleanRegex(after));
     }
-    return own2;
+    return own3;
   }
   if (def.options) {
     const sources = def.options.map(partPattern);
@@ -37969,26 +37969,6 @@ function logCounts(event, counts) {
 `);
 }
 
-// mcp/src/bury.ts
-import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
-import { join as join2 } from "node:path";
-
-// shared/src/display-name.ts
-var MAX_NAME_CODE_POINTS = 80;
-var CUT_CODE_POINTS = 79;
-function collapse(text) {
-  return text.normalize("NFC").trim().replace(/\s+/gu, " ");
-}
-function displayName(text) {
-  const collapsed = collapse(text);
-  const points = [...collapsed];
-  if (points.length <= MAX_NAME_CODE_POINTS) return collapsed;
-  return points.slice(0, CUT_CODE_POINTS).join("") + "…";
-}
-function foldName(text) {
-  return collapse(text).toLowerCase();
-}
-
 // shared/src/local-date.ts
 function localDate(date5, timeZone) {
   return new Intl.DateTimeFormat("en-CA", {
@@ -37997,6 +37977,10 @@ function localDate(date5, timeZone) {
     month: "2-digit",
     day: "2-digit"
   }).format(date5);
+}
+function localMonth(iso, timeZone) {
+  const date5 = typeof iso === "string" ? new Date(iso) : iso;
+  return localDate(date5, timeZone).slice(0, 7);
 }
 
 // shared/src/money.ts
@@ -38570,12 +38554,12 @@ function buildRows(input2) {
   dataRows.forEach((row, position) => {
     const cell = (index) => row.cells[index] ?? "";
     const failures = [];
-    const fail3 = (field, message) => {
+    const fail4 = (field, message) => {
       failures.push(`${field}: ${message}`);
     };
     let date5 = "";
     if (dateFormat === null) {
-      fail3("date", NO_DATE_FORMAT_REASON);
+      fail4("date", NO_DATE_FORMAT_REASON);
     } else {
       try {
         date5 = parseDate(cell(columns.date), dateFormat);
@@ -38583,12 +38567,12 @@ function buildRows(input2) {
         if (!(error63 instanceof ParseError)) {
           throw error63;
         }
-        fail3("date", error63.message);
+        fail4("date", error63.message);
       }
     }
     const description = cell(columns.description).trim();
     if (description === "") {
-      fail3("description", "missing required cell");
+      fail4("description", "missing required cell");
     }
     let amountCents = 0;
     try {
@@ -38613,7 +38597,7 @@ function buildRows(input2) {
       if (!(error63 instanceof ParseError)) {
         throw error63;
       }
-      fail3(error63.field, error63.message);
+      fail4(error63.field, error63.message);
     }
     let currency = currencyFallback;
     if (columns.currency !== null) {
@@ -38623,7 +38607,7 @@ function buildRows(input2) {
         if (!(error63 instanceof ParseError)) {
           throw error63;
         }
-        fail3("currency", error63.message);
+        fail4("currency", error63.message);
       }
     }
     if (failures.length > 0) {
@@ -41127,26 +41111,26 @@ function firstAtOrAfter2(byDay, day) {
   return lo;
 }
 function cadencesFor(state, piece, group) {
-  const own2 = piece.segment.cadence;
+  const own3 = piece.segment.cadence;
   if (state.cadence !== null) {
-    if (own2 === null || own2 === state.cadence)
+    if (own3 === null || own3 === state.cadence)
       return [state.cadence];
     return [];
   }
-  if (own2 !== null)
-    return [own2];
+  if (own3 !== null)
+    return [own3];
   return group.source === "known" ? SINGLE_JOIN_CADENCES : [];
 }
 function lateOut(piece, l) {
   const second = piece.segment.charges[1];
-  const own2 = piece.segment.intervals[0];
-  if (second === void 0 || own2 === void 0)
+  const own3 = piece.segment.intervals[0];
+  if (second === void 0 || own3 === void 0)
     return null;
   const afterL = classifyStep(l.date, second.date, l.date, 0, "monthly").k2;
   if (afterL !== null)
     return { k: 1, kind: "on-schedule", deviation: afterL };
-  if (own2.k === 1 && own2.kind === "on-schedule")
-    return own2;
+  if (own3.k === 1 && own3.kind === "on-schedule")
+    return own3;
   return "refuse";
 }
 function planJoin(state, piece, cadence, group) {
@@ -41162,35 +41146,35 @@ function planJoin(state, piece, cadence, group) {
   const step = classifyStep(l.date, g.date, l.date, 0, cadence);
   const lastInterval = state.intervals[state.intervals.length - 1];
   const afterLate = lastInterval !== void 0 && lastInterval.kind === "late";
-  let join4 = null;
+  let join7 = null;
   let firstOut = null;
   if (step.k1 !== null) {
-    join4 = { k: 1, kind: "on-schedule", deviation: step.k1 };
+    join7 = { k: 1, kind: "on-schedule", deviation: step.k1 };
   } else if (!bothSingle && !afterLate && step.k2 !== null) {
-    join4 = { k: 2, kind: "on-schedule", deviation: step.k2 };
+    join7 = { k: 2, kind: "on-schedule", deviation: step.k2 };
   } else if (afterLate && !bothSingle) {
     const before = state.charges[state.charges.length - 2];
     const fromBefore = classifyStep(before.date, g.date, before.date, 0, cadence).k2;
     if (fromBefore !== null)
-      join4 = { k: 1, kind: "on-schedule", deviation: fromBefore };
+      join7 = { k: 1, kind: "on-schedule", deviation: fromBefore };
   }
-  if (join4 === null && cadence === "monthly" && !bothSingle && !afterLate && step.late !== null) {
+  if (join7 === null && cadence === "monthly" && !bothSingle && !afterLate && step.late !== null) {
     const out = lateOut(piece, l);
     if (out === "refuse")
       return null;
-    join4 = { k: 1, kind: "late", deviation: step.late };
+    join7 = { k: 1, kind: "late", deviation: step.late };
     firstOut = out;
   }
-  if (join4 === null)
+  if (join7 === null)
     return null;
   let ones = state.ones + piece.ones;
   let twos = state.twos + piece.twos;
-  if (join4.k === 1)
+  if (join7.k === 1)
     ones++;
   else
     twos++;
-  const own2 = piece.segment.intervals[0];
-  if (firstOut !== null && own2 !== void 0 && own2.k !== firstOut.k) {
+  const own3 = piece.segment.intervals[0];
+  if (firstOut !== null && own3 !== void 0 && own3.k !== firstOut.k) {
     if (firstOut.k === 1) {
       ones++;
       twos--;
@@ -41201,7 +41185,7 @@ function planJoin(state, piece, cadence, group) {
   }
   if (ones < 1 || twos > ones)
     return null;
-  return { cadence, join: join4, firstOut };
+  return { cadence, join: join7, firstOut };
 }
 function beats(a, b, p) {
   const dayA = a.first.date.day;
@@ -42959,18 +42943,649 @@ function cancelDraft(t) {
   return { kind: "email", subject: email3.subject, body: email3.body, mailto: mailtoHref(email3) };
 }
 
-// mcp/src/bury.ts
-function isHistory(value) {
-  return typeof value === "object" && value !== null && "version" in value && value.version === 1 && "trackedCharges" in value && Array.isArray(value.trackedCharges) && "tombstones" in value && Array.isArray(value.tombstones) && "scans" in value && Array.isArray(value.scans);
+// mcp/src/data-files.ts
+import { randomBytes } from "node:crypto";
+import { mkdir, open as open2, readdir, rename, stat, unlink } from "node:fs/promises";
+import { join as join2 } from "node:path";
+var DATA_DIR_MODE = 448;
+var FILE_MODE = 384;
+var KEEP = 3;
+var STAMP_FILE = /^(\d{8}T\d{6})(?:-(\d+))?\.json$/u;
+async function ensureDataDir(dataDir) {
+  await mkdir(dataDir, { recursive: true, mode: DATA_DIR_MODE });
 }
-async function readHistory(path) {
+async function writeFileAtomic(dataDir, name, text) {
+  const tmpPath = join2(dataDir, `${name}.tmp-${process.pid}-${randomBytes(3).toString("hex")}`);
+  const finalPath = join2(dataDir, name);
   try {
-    const parsed = JSON.parse(await readFile(path, "utf8"));
-    return isHistory(parsed) ? parsed : null;
+    const handle = await open2(tmpPath, "wx", FILE_MODE);
+    try {
+      await handle.writeFile(text, "utf8");
+      await handle.sync();
+    } finally {
+      await handle.close();
+    }
+    await rename(tmpPath, finalPath);
+  } catch (error63) {
+    await unlink(tmpPath).catch(() => void 0);
+    throw error63;
+  }
+  await syncDirectory(dataDir);
+}
+async function syncDirectory(dataDir) {
+  try {
+    const handle = await open2(dataDir, "r");
+    try {
+      await handle.sync();
+    } finally {
+      await handle.close();
+    }
   } catch {
-    return null;
   }
 }
+function utcStamp(now) {
+  return now.toISOString().slice(0, 19).replace(/[-:]/gu, "");
+}
+async function exists(path) {
+  try {
+    await stat(path);
+    return true;
+  } catch (error63) {
+    if (error63.code === "ENOENT") return false;
+    throw error63;
+  }
+}
+async function stampedName(dataDir, prefix, now) {
+  const stamp = utcStamp(now);
+  let name = `${prefix}-${stamp}.json`;
+  for (let n = 2; await exists(join2(dataDir, name)); n += 1) {
+    name = `${prefix}-${stamp}-${n}.json`;
+  }
+  return name;
+}
+async function rotateKeep3(dataDir, prefix) {
+  const lead = `${prefix}-`;
+  const found = [];
+  for (const name of await readdir(dataDir)) {
+    if (!name.startsWith(lead)) continue;
+    const match = STAMP_FILE.exec(name.slice(lead.length));
+    if (match === null) continue;
+    found.push({ name, stamp: match[1] ?? "", n: match[2] === void 0 ? 1 : Number(match[2]) });
+  }
+  found.sort((a, b) => a.stamp === b.stamp ? b.n - a.n : a.stamp < b.stamp ? 1 : -1);
+  for (const old of found.slice(KEEP)) {
+    await unlink(join2(dataDir, old.name)).catch((error63) => {
+      if (error63.code !== "ENOENT") throw error63;
+    });
+  }
+}
+
+// mcp/src/history-lock.ts
+import { randomBytes as randomBytes2 } from "node:crypto";
+import { constants } from "node:fs";
+import { open as open3, readFile, rename as rename2, stat as stat2, unlink as unlink2 } from "node:fs/promises";
+import { join as join3 } from "node:path";
+var LOCK_TIMINGS = { pollMs: 50, waitMs: 5e3, staleMs: 3e4 };
+var REAL_CLOCK = {
+  now: () => Date.now(),
+  sleep: (ms) => new Promise((resolve3) => {
+    setTimeout(resolve3, ms);
+  })
+};
+var LOCK_FILE = "history.lock";
+var LOCK_MODE = 384;
+function codeOf(error63) {
+  return typeof error63 === "object" && error63 !== null && "code" in error63 ? String(error63.code) : void 0;
+}
+async function tryCreate(lockPath, clock) {
+  let handle;
+  try {
+    handle = await open3(
+      lockPath,
+      constants.O_CREAT | constants.O_EXCL | constants.O_WRONLY,
+      LOCK_MODE
+    );
+  } catch (error63) {
+    if (codeOf(error63) === "EEXIST") return false;
+    throw error63;
+  }
+  try {
+    await handle.writeFile(
+      JSON.stringify({ pid: process.pid, at: new Date(clock.now()).toISOString() })
+    );
+  } catch (error63) {
+    await handle.close();
+    await unlink2(lockPath).catch(() => void 0);
+    throw error63;
+  }
+  await handle.close();
+  return true;
+}
+function namedPid(text) {
+  try {
+    const parsed = JSON.parse(text);
+    if (typeof parsed === "object" && parsed !== null && "pid" in parsed) {
+      const pid = parsed.pid;
+      if (typeof pid === "number" && Number.isSafeInteger(pid) && pid > 0) return pid;
+    }
+  } catch {
+  }
+  return null;
+}
+function isDead(pid) {
+  try {
+    process.kill(pid, 0);
+    return false;
+  } catch (error63) {
+    return codeOf(error63) === "ESRCH";
+  }
+}
+async function judge(lockPath, timings, clock) {
+  let text;
+  let mtimeMs;
+  try {
+    text = await readFile(lockPath, "utf8");
+    mtimeMs = (await stat2(lockPath)).mtimeMs;
+  } catch (error63) {
+    if (codeOf(error63) === "ENOENT") return "gone";
+    throw error63;
+  }
+  if (clock.now() - mtimeMs > timings.staleMs) return "stale";
+  const pid = namedPid(text);
+  return pid !== null && isDead(pid) ? "stale" : "fresh";
+}
+async function takeOver(dataDir, lockPath) {
+  const aside = join3(
+    dataDir,
+    `${LOCK_FILE}.stale-${process.pid}-${randomBytes2(3).toString("hex")}`
+  );
+  try {
+    await rename2(lockPath, aside);
+  } catch (error63) {
+    if (codeOf(error63) === "ENOENT") return false;
+    throw error63;
+  }
+  await unlink2(aside).catch(() => void 0);
+  logCounts("lock-takeover", { count: 1 });
+  return true;
+}
+async function withHistoryLock(dataDir, fn, timings = LOCK_TIMINGS, clock = REAL_CLOCK) {
+  const lockPath = join3(dataDir, LOCK_FILE);
+  const startedAt = clock.now();
+  for (; ; ) {
+    if (await tryCreate(lockPath, clock)) break;
+    const state = await judge(lockPath, timings, clock);
+    if (state === "gone") continue;
+    if (state === "stale") {
+      await takeOver(dataDir, lockPath);
+      continue;
+    }
+    if (clock.now() - startedAt >= timings.waitMs) return { ok: false, reason: "history-busy" };
+    await clock.sleep(timings.pollMs);
+  }
+  try {
+    return await fn();
+  } finally {
+    await unlink2(lockPath).catch((error63) => {
+      if (codeOf(error63) !== "ENOENT") throw error63;
+    });
+  }
+}
+
+// mcp/src/history-store.ts
+import { readFile as readFile2, rename as rename3, writeFile } from "node:fs/promises";
+import { join as join4 } from "node:path";
+
+// shared/src/history-codec.ts
+var LIMITS = { scans: 36, trackedCharges: 1e3, tombstones: 1e3, reportedTrials: 1e3 };
+var MAX_NAME_CODE_POINTS = 80;
+var MAX_CORE_SOURCE_LENGTH = 64;
+var CURRENCY = /^[A-Z]{3}$/u;
+var DATE = /^(\d{4})-(\d{2})-(\d{2})$/u;
+var DATE_TIME = /^(\d{4}-\d{2}-\d{2})T(\d{2}):(\d{2}):(\d{2})(?:\.\d{1,9})?Z$/u;
+function emptyHistory() {
+  return {
+    version: 1,
+    coreSource: null,
+    trackedCharges: [],
+    tombstones: [],
+    scans: [],
+    reportedTrials: []
+  };
+}
+function isPlain(value) {
+  return typeof value === "object" && value !== null && !Array.isArray(value) && Object.getPrototypeOf(value) === Object.prototype;
+}
+function own2(object3, key) {
+  return Object.hasOwn(object3, key) ? object3[key] : void 0;
+}
+function isCents(value) {
+  return typeof value === "number" && Number.isSafeInteger(value) && value >= 0;
+}
+function isLeap2(year) {
+  return year % 4 === 0 && year % 100 !== 0 || year % 400 === 0;
+}
+function isRealDate2(value) {
+  if (typeof value !== "string") return false;
+  const match = DATE.exec(value);
+  if (match === null) return false;
+  const year = Number(match[1]);
+  const month = Number(match[2]);
+  const day = Number(match[3]);
+  if (year < 1 || month < 1 || month > 12 || day < 1) return false;
+  const days = [31, isLeap2(year) ? 29 : 28, 31, 30, 31, 30, 31, 31, 30, 31, 30, 31];
+  return day <= (days[month - 1] ?? 0);
+}
+function isIsoDateTime(value) {
+  if (typeof value !== "string") return false;
+  const match = DATE_TIME.exec(value);
+  if (match === null || !isRealDate2(match[1])) return false;
+  return Number(match[2]) < 24 && Number(match[3]) < 60 && Number(match[4]) < 60;
+}
+function isCadence(value) {
+  return value === "weekly" || value === "monthly" || value === "yearly";
+}
+function isCurrency(value) {
+  return typeof value === "string" && CURRENCY.test(value);
+}
+function isName(value) {
+  return typeof value === "string" && value.length > 0 && [...value].length <= MAX_NAME_CODE_POINTS;
+}
+function isText(value) {
+  return typeof value === "string" && value.length > 0;
+}
+function isNullOr(value, check2) {
+  return value === null || check2(value);
+}
+function readYearlyTotals(value) {
+  if (!isPlain(value)) return null;
+  const result = {};
+  for (const currency of Object.keys(value)) {
+    if (!CURRENCY.test(currency)) return null;
+    const entry = value[currency];
+    if (!isPlain(entry)) return null;
+    const yearlyCostCents = own2(entry, "yearlyCostCents");
+    const guessedCount = own2(entry, "guessedCount");
+    if (!isCents(yearlyCostCents) || !isCents(guessedCount)) return null;
+    result[currency] = { yearlyCostCents, guessedCount };
+  }
+  return result;
+}
+function readTrackedCharge(raw) {
+  if (!isPlain(raw)) return null;
+  const key = own2(raw, "key");
+  const merchant = own2(raw, "merchant");
+  const serviceId = own2(raw, "serviceId");
+  const currency = own2(raw, "currency");
+  const cadence = own2(raw, "cadence");
+  const merchantKey = own2(raw, "merchantKey");
+  const amountCents = own2(raw, "amountCents");
+  const cadenceAssumed = own2(raw, "cadenceAssumed");
+  const firstSeenScan = own2(raw, "firstSeenScan");
+  const lastSeenScan = own2(raw, "lastSeenScan");
+  const reportedRiseDate = own2(raw, "reportedRiseDate");
+  if (!isText(key) || !isName(merchant) || !isNullOr(serviceId, isText) || !isCurrency(currency) || !isCadence(cadence) || typeof merchantKey !== "string" || !isCents(amountCents) || typeof cadenceAssumed !== "boolean" || typeof firstSeenScan !== "string" || typeof lastSeenScan !== "string" || !isNullOr(reportedRiseDate, isRealDate2)) {
+    return null;
+  }
+  return {
+    key,
+    merchant,
+    serviceId,
+    currency,
+    cadence,
+    merchantKey,
+    amountCents,
+    cadenceAssumed,
+    firstSeenScan,
+    lastSeenScan,
+    reportedRiseDate
+  };
+}
+function readTombstone(raw) {
+  if (!isPlain(raw)) return null;
+  const key = own2(raw, "key");
+  const name = own2(raw, "name");
+  const serviceId = own2(raw, "serviceId");
+  const currency = own2(raw, "currency");
+  const cadence = own2(raw, "cadence");
+  const merchantKey = own2(raw, "merchantKey");
+  const amountCents = own2(raw, "amountCents");
+  const cadenceAssumed = own2(raw, "cadenceAssumed");
+  const yearlySavingCents = own2(raw, "yearlySavingCents");
+  const buriedAt = own2(raw, "buriedAt");
+  const risenReportedThrough = own2(raw, "risenReportedThrough");
+  if (!isText(key) || !isName(name) || !isNullOr(serviceId, isText) || !isCurrency(currency) || !isCadence(cadence) || typeof merchantKey !== "string" || !isCents(amountCents) || typeof cadenceAssumed !== "boolean" || !isRealDate2(buriedAt) || !isNullOr(risenReportedThrough, isRealDate2)) {
+    return null;
+  }
+  const expected = cadenceAssumed ? null : amountCents * CADENCE_FACTOR[cadence];
+  if (yearlySavingCents !== expected) return null;
+  return {
+    key,
+    name,
+    serviceId,
+    currency,
+    cadence,
+    merchantKey,
+    amountCents,
+    cadenceAssumed,
+    yearlySavingCents: expected,
+    buriedAt,
+    risenReportedThrough
+  };
+}
+function readScanRecord(raw) {
+  if (!isPlain(raw)) return null;
+  const scanId = own2(raw, "scanId");
+  const scannedAt = own2(raw, "scannedAt");
+  const range = own2(raw, "statementRange");
+  const undeadCount = own2(raw, "undeadCount");
+  const yearlyTotals = readYearlyTotals(own2(raw, "yearlyTotals"));
+  const newCount = own2(raw, "newCount");
+  const possessedCount = own2(raw, "possessedCount");
+  if (!isText(scanId) || !isIsoDateTime(scannedAt) || !isPlain(range)) return null;
+  const from = own2(range, "from");
+  const to = own2(range, "to");
+  if (!isRealDate2(from) || !isRealDate2(to)) return null;
+  if (!isCents(undeadCount) || !isCents(newCount) || !isCents(possessedCount)) return null;
+  if (yearlyTotals === null) return null;
+  return {
+    scanId,
+    scannedAt,
+    statementRange: { from, to },
+    undeadCount,
+    yearlyTotals,
+    newCount,
+    possessedCount
+  };
+}
+function dedupe(records, id) {
+  const seen = /* @__PURE__ */ new Set();
+  const kept = [];
+  for (const record2 of records) {
+    const value = id(record2);
+    if (seen.has(value)) continue;
+    seen.add(value);
+    kept.push(record2);
+  }
+  return { kept, dropped: records.length - kept.length };
+}
+function keepTop(records, max, rank) {
+  if (records.length <= max) return records;
+  const order = records.map((record2, index) => ({ record: record2, index, rank: rank(record2) }));
+  order.sort((a, b) => a.rank < b.rank ? 1 : a.rank > b.rank ? -1 : a.index - b.index);
+  return order.slice(0, max).sort((a, b) => a.index - b.index).map((entry) => entry.record);
+}
+function applyLimits(history) {
+  const scans = history.scans.slice(-LIMITS.scans);
+  const position = /* @__PURE__ */ new Map();
+  scans.forEach((scan, index) => position.set(scan.scanId, index));
+  return {
+    version: 1,
+    coreSource: history.coreSource,
+    trackedCharges: keepTop(
+      history.trackedCharges,
+      LIMITS.trackedCharges,
+      (charge) => position.get(charge.lastSeenScan) ?? -1
+    ),
+    tombstones: keepTop(history.tombstones, LIMITS.tombstones, (stone) => stone.buriedAt),
+    scans,
+    reportedTrials: history.reportedTrials.slice(-LIMITS.reportedTrials)
+  };
+}
+function readRecords(items, read) {
+  const records = [];
+  for (const item of items) {
+    const record2 = read(item);
+    if (record2 !== null) records.push(record2);
+  }
+  return { records, dropped: items.length - records.length };
+}
+function readTrial(raw) {
+  return isText(raw) ? raw : null;
+}
+function decodeParsed(parsed) {
+  if (!isPlain(parsed)) return { kind: "unreadable" };
+  const version2 = own2(parsed, "version");
+  if (typeof version2 !== "number" || !Number.isSafeInteger(version2) || version2 < 1) {
+    return { kind: "unreadable" };
+  }
+  if (version2 > 1) return { kind: "newer", version: version2 };
+  const coreSource = own2(parsed, "coreSource");
+  const trackedRaw = own2(parsed, "trackedCharges");
+  const tombstonesRaw = own2(parsed, "tombstones");
+  const scansRaw = own2(parsed, "scans");
+  const trialsRaw = own2(parsed, "reportedTrials");
+  if (!(coreSource === null || typeof coreSource === "string" && coreSource.length <= MAX_CORE_SOURCE_LENGTH) || !Array.isArray(trackedRaw) || !Array.isArray(tombstonesRaw) || !Array.isArray(scansRaw) || !Array.isArray(trialsRaw)) {
+    return { kind: "unreadable" };
+  }
+  const tracked = readRecords(trackedRaw, readTrackedCharge);
+  const stones = readRecords(tombstonesRaw, readTombstone);
+  const scans = readRecords(scansRaw, readScanRecord);
+  const trials = readRecords(trialsRaw, readTrial);
+  const trackedUnique = dedupe(tracked.records, (charge) => charge.key);
+  const stonesUnique = dedupe(stones.records, (stone) => stone.key);
+  const scansUnique = dedupe(scans.records, (scan) => scan.scanId);
+  const trialsUnique = dedupe(trials.records, (key) => key);
+  const dropped = tracked.dropped + stones.dropped + scans.dropped + trials.dropped + trackedUnique.dropped + stonesUnique.dropped + scansUnique.dropped + trialsUnique.dropped;
+  const history = applyLimits({
+    version: 1,
+    coreSource,
+    trackedCharges: trackedUnique.kept,
+    tombstones: stonesUnique.kept,
+    scans: scansUnique.kept,
+    reportedTrials: trialsUnique.kept
+  });
+  return { kind: "ok", history, dropped };
+}
+function decodeHistory(text) {
+  try {
+    return decodeParsed(JSON.parse(text));
+  } catch {
+    return { kind: "unreadable" };
+  }
+}
+function encodeHistory(history) {
+  return JSON.stringify(applyLimits(history)) + "\n";
+}
+
+// mcp/src/history-store.ts
+var HISTORY_FILE = "history.json";
+var BACKUP_PREFIX = "history.backup";
+var UNREADABLE_PREFIX = "history.unreadable";
+var FILE_MODE2 = 384;
+function isMissing(error63) {
+  return error63.code === "ENOENT";
+}
+async function loadHistoryForWrite(dataDir, now) {
+  const path = join4(dataDir, HISTORY_FILE);
+  let bytes;
+  try {
+    bytes = await readFile2(path);
+  } catch (error63) {
+    if (isMissing(error63)) return { history: emptyHistory(), reset: false, dropped: 0 };
+    return { error: "history-unreadable" };
+  }
+  const decoded = decodeHistory(bytes.toString("utf8"));
+  switch (decoded.kind) {
+    case "newer":
+      return { error: "history-newer" };
+    case "ok": {
+      if (decoded.dropped > 0) {
+        const name = await stampedName(dataDir, BACKUP_PREFIX, now);
+        await writeFile(join4(dataDir, name), bytes, { flag: "wx", mode: FILE_MODE2 });
+        await rotateKeep3(dataDir, BACKUP_PREFIX);
+      }
+      return { history: decoded.history, reset: false, dropped: decoded.dropped };
+    }
+    case "unreadable": {
+      const name = await stampedName(dataDir, UNREADABLE_PREFIX, now);
+      await rename3(path, join4(dataDir, name));
+      await rotateKeep3(dataDir, UNREADABLE_PREFIX);
+      return { history: emptyHistory(), reset: true, dropped: 0 };
+    }
+  }
+}
+async function readHistory(dataDir) {
+  let text;
+  try {
+    text = await readFile2(join4(dataDir, HISTORY_FILE), "utf8");
+  } catch (error63) {
+    if (isMissing(error63)) return { history: emptyHistory() };
+    return { error: "history-unreadable" };
+  }
+  const decoded = decodeHistory(text);
+  if (decoded.kind === "ok") return { history: decoded.history };
+  return { error: decoded.kind === "newer" ? "history-newer" : "history-unreadable" };
+}
+async function saveHistory(dataDir, history) {
+  await writeFileAtomic(dataDir, HISTORY_FILE, encodeHistory(history));
+}
+
+// mcp/src/match.ts
+var compareText = (a, b) => a < b ? -1 : a > b ? 1 : 0;
+var tripleOf = (x) => JSON.stringify([x.currency, x.cadence, x.merchantKey]);
+function qualifies(s, r) {
+  return s.currency === r.currency && s.cadence === r.cadence && s.merchantKey === r.merchantKey && s.priceHistory.some((p) => p.amountCents === r.amountCents) && (!s.evidence.cadenceAssumed || r.cadenceAssumed);
+}
+function matchRecords(subs, records, previousScanId) {
+  const orderedSubs = [...subs].sort((a, b) => compareText(a.id, b.id));
+  const orderedRecords = [...records].sort((a, b) => compareText(a.key, b.key));
+  const pairs = /* @__PURE__ */ new Map();
+  const takenKeys = /* @__PURE__ */ new Set();
+  const byKey = /* @__PURE__ */ new Map();
+  for (const r of orderedRecords) byKey.set(r.key, r);
+  for (const s of orderedSubs) {
+    const r = byKey.get(s.id);
+    if (r !== void 0 && !takenKeys.has(r.key)) {
+      pairs.set(s.id, r);
+      takenKeys.add(r.key);
+    }
+  }
+  const leftSubs = orderedSubs.filter((s) => !pairs.has(s.id));
+  const leftRecords = orderedRecords.filter((r) => !takenKeys.has(r.key));
+  const forSub = /* @__PURE__ */ new Map();
+  const forRecord = /* @__PURE__ */ new Map();
+  for (const s of leftSubs) {
+    for (const r of leftRecords) {
+      if (!qualifies(s, r)) continue;
+      forSub.set(s.id, [...forSub.get(s.id) ?? [], r]);
+      forRecord.set(r.key, [...forRecord.get(r.key) ?? [], s]);
+    }
+  }
+  for (const s of leftSubs) {
+    const candidates = forSub.get(s.id);
+    const only = candidates?.length === 1 ? candidates[0] : void 0;
+    if (only === void 0) continue;
+    if (forRecord.get(only.key)?.length === 1) {
+      pairs.set(s.id, only);
+      takenKeys.add(only.key);
+    }
+  }
+  const unmatchedSubs = orderedSubs.filter((s) => !pairs.has(s.id));
+  const unmatchedRecords = orderedRecords.filter((r) => !takenKeys.has(r.key));
+  const blockingTriples = /* @__PURE__ */ new Set();
+  for (const r of unmatchedRecords) {
+    const blocks = r.lastSeenScan === void 0 ? forRecord.has(r.key) : previousScanId !== null && r.lastSeenScan === previousScanId;
+    if (blocks) blockingTriples.add(tripleOf(r));
+  }
+  const blocked = /* @__PURE__ */ new Set();
+  for (const s of unmatchedSubs) {
+    if (s.status === "active" && blockingTriples.has(tripleOf(s))) blocked.add(s.id);
+  }
+  return { pairs, unmatchedSubs, unmatchedRecords, blocked };
+}
+
+// shared/src/display-name.ts
+var MAX_NAME_CODE_POINTS2 = 80;
+var CUT_CODE_POINTS = 79;
+function collapse(text) {
+  return text.normalize("NFC").trim().replace(/\s+/gu, " ");
+}
+function displayName(text) {
+  const collapsed = collapse(text);
+  const points = [...collapsed];
+  if (points.length <= MAX_NAME_CODE_POINTS2) return collapsed;
+  return points.slice(0, CUT_CODE_POINTS).join("") + "…";
+}
+function foldName(text) {
+  return collapse(text).toLowerCase();
+}
+
+// mcp/src/resolve-service.ts
+var MAX_TEXT_CODE_POINTS = 200;
+var MAX_CANDIDATES = 5;
+var MIN_PREFIX_CODE_POINTS = 2;
+var AMOUNT_SUFFIX = /^(.*\S)\s+(?:[$€£¥]|[A-Za-z]{3}\s?)?(\d{1,7}(?:[.,]\d{1,2})?)$/u;
+var TRAILING_CURRENCY = /^(.*\S)\s+[A-Za-z]{3}$/u;
+var compareText2 = (a, b) => a < b ? -1 : a > b ? 1 : 0;
+var codePoints = (text) => [...text].length;
+function centsOf(amountText) {
+  const [whole = "0", fraction = ""] = amountText.split(/[.,]/u);
+  return Number(whole) * 100 + Number(fraction.padEnd(2, "0"));
+}
+function commonPrefixLength(a, b) {
+  const left = [...a];
+  const right = [...b];
+  let n = 0;
+  while (n < left.length && n < right.length && left[n] === right[n]) n += 1;
+  return n;
+}
+function byNameAmountKey(a, b) {
+  return compareText2(foldName(a.merchant), foldName(b.merchant)) || a.amountCents - b.amountCents || compareText2(a.key, b.key);
+}
+function candidatesFor(q, entries) {
+  if (q === "") return [];
+  const containing = entries.filter((e) => foldName(e.merchant).includes(q));
+  const taken = new Set(containing);
+  const rest = entries.filter((e) => !taken.has(e));
+  const lengths = rest.map((e) => commonPrefixLength(foldName(e.merchant), q));
+  const longest = Math.max(0, ...lengths);
+  const sharing = longest >= MIN_PREFIX_CODE_POINTS ? rest.filter((_, i) => lengths[i] === longest) : [];
+  return [...containing.sort(byNameAmountKey), ...sharing.sort(byNameAmountKey)].slice(
+    0,
+    MAX_CANDIDATES
+  );
+}
+function resolveName(name, amountCents, entries) {
+  const q = foldName(name);
+  if (q === "") return { kind: "none", candidates: [] };
+  let hits = entries.filter((e) => e.serviceId !== null && foldName(e.serviceId) === q);
+  if (hits.length === 0) hits = entries.filter((e) => foldName(e.merchant) === q);
+  if (hits.length === 0 && codePoints(q) >= MIN_PREFIX_CODE_POINTS) {
+    hits = entries.filter((e) => foldName(e.merchant).startsWith(q));
+  }
+  if (amountCents !== null) hits = hits.filter((e) => e.amountCents === amountCents);
+  const [only] = hits;
+  if (only !== void 0 && hits.length === 1) return { kind: "one", entry: only };
+  if (hits.length > 1) {
+    return {
+      kind: "several",
+      candidates: [...hits].sort(byNameAmountKey).slice(0, MAX_CANDIDATES)
+    };
+  }
+  return { kind: "none", candidates: candidatesFor(q, entries) };
+}
+function resolveService(text, entries) {
+  if (codePoints(text) > MAX_TEXT_CODE_POINTS) return { kind: "none", candidates: [] };
+  const whole = resolveName(text, null, entries);
+  if (whole.kind !== "none") return whole;
+  const trimmed = text.normalize("NFC").trim();
+  const match = AMOUNT_SUFFIX.exec(trimmed);
+  const name = match?.[1];
+  const amountText = match?.[2];
+  if (name === void 0 || amountText === void 0) return whole;
+  const amountCents = centsOf(amountText);
+  const split = resolveName(name, amountCents, entries);
+  if (split.kind !== "none") return split;
+  const bare = TRAILING_CURRENCY.exec(name)?.[1];
+  if (bare !== void 0) {
+    const stripped = resolveName(bare, amountCents, entries);
+    if (stripped.kind !== "none") return stripped;
+  }
+  return split;
+}
+
+// mcp/src/bury.ts
 function viewOf(t) {
   return {
     ref: refOf(t.key),
@@ -42992,105 +43607,318 @@ function candidateOf(c) {
     cadence: c.cadence
   };
 }
-function resolve2(text, charges) {
-  const q = foldName(text);
-  if (q === "") return [];
-  const byServiceId = charges.filter((c) => c.serviceId !== null && foldName(c.serviceId) === q);
-  if (byServiceId.length > 0) return byServiceId;
-  return charges.filter((c) => foldName(c.merchant) === q);
+function currentCharges(history) {
+  const last = history.scans[history.scans.length - 1];
+  if (last === void 0) return [];
+  return history.trackedCharges.filter((c) => c.lastSeenScan === last.scanId);
 }
 async function bury(context, args) {
-  const historyPath = join2(context.dataDir, "history.json");
-  const history = await readHistory(historyPath);
-  const lastScan = history?.scans[history.scans.length - 1];
-  if (history === null || lastScan === void 0) return { ok: false, reason: "no-scan" };
-  const current = history.trackedCharges.filter((c) => c.lastSeenScan === lastScan.scanId);
-  const hits = resolve2(args.service, current);
-  if (hits.length === 0) {
-    logCounts("bury", { found: 0, already: 0 });
-    return { ok: false, reason: "not-found", candidates: [] };
+  await ensureDataDir(context.dataDir);
+  const result = await withHistoryLock(
+    context.dataDir,
+    async () => {
+      const loaded = await loadHistoryForWrite(context.dataDir, context.now());
+      if ("error" in loaded) return { ok: false, reason: loaded.error };
+      const { history } = loaded;
+      const notes = {
+        ...loaded.reset ? { historyReset: true } : {},
+        ...loaded.dropped > 0 ? { historyDropped: loaded.dropped } : {}
+      };
+      const lastScan = history.scans[history.scans.length - 1];
+      if (lastScan === void 0) return { ok: false, reason: "no-scan" };
+      const resolution = resolveService(args.service, currentCharges(history));
+      if (resolution.kind !== "one") {
+        const found = resolution.kind === "several" ? resolution.candidates.length : 0;
+        logCounts("bury", { found, already: 0 });
+        return {
+          ok: false,
+          reason: resolution.kind === "several" ? "ambiguous" : "not-found",
+          candidates: resolution.candidates.map(candidateOf)
+        };
+      }
+      const t = resolution.entry;
+      const asSub = {
+        id: t.key,
+        currency: t.currency,
+        cadence: t.cadence,
+        merchantKey: t.merchantKey,
+        priceHistory: [{ amountCents: t.amountCents }],
+        evidence: { cadenceAssumed: t.cadenceAssumed }
+      };
+      const tombMatch = matchRecords([asSub], history.tombstones, lastScan.scanId);
+      const existing = tombMatch.pairs.get(t.key);
+      if (existing !== void 0) {
+        logCounts("bury", { found: 1, already: 1 });
+        return {
+          ok: true,
+          tombstone: viewOf(existing),
+          cancel: cancelDraft(existing),
+          alreadyBuried: true,
+          ...notes
+        };
+      }
+      const tombstone = {
+        key: t.key,
+        name: t.merchant,
+        serviceId: t.serviceId,
+        currency: t.currency,
+        cadence: t.cadence,
+        merchantKey: t.merchantKey,
+        amountCents: t.amountCents,
+        cadenceAssumed: t.cadenceAssumed,
+        yearlySavingCents: t.cadenceAssumed ? null : t.amountCents * CADENCE_FACTOR[t.cadence],
+        buriedAt: localDate(context.now(), context.timeZone),
+        risenReportedThrough: null
+      };
+      await saveHistory(context.dataDir, {
+        ...history,
+        tombstones: [...history.tombstones, tombstone]
+      });
+      logCounts("bury", { found: 1, already: 0 });
+      return {
+        ok: true,
+        tombstone: viewOf(tombstone),
+        cancel: cancelDraft(tombstone),
+        alreadyBuried: false,
+        ...notes
+      };
+    },
+    context.lock?.timings,
+    context.lock?.clock
+  );
+  return result;
+}
+
+// shared/src/graveyard-summary.ts
+function compareText3(a, b) {
+  if (a < b) return -1;
+  return a > b ? 1 : 0;
+}
+function compareTombstones(a, b) {
+  return compareText3(b.buriedAt, a.buriedAt) || compareText3(a.name, b.name) || compareText3(a.key, b.key);
+}
+function viewOf2(tombstone) {
+  const view = { ...tombstone };
+  delete view.key;
+  delete view.merchantKey;
+  return { ...view, ref: refOf(tombstone.key) };
+}
+function savingsOf(tombstones) {
+  const byCurrency = /* @__PURE__ */ new Map();
+  for (const t of tombstones) {
+    const entry = byCurrency.get(t.currency) ?? { yearlySavingCents: 0, guessedCount: 0 };
+    if (t.yearlySavingCents === null) entry.guessedCount += 1;
+    else entry.yearlySavingCents += t.yearlySavingCents;
+    byCurrency.set(t.currency, entry);
   }
-  const [t] = hits;
-  if (t === void 0 || hits.length > 1) {
-    logCounts("bury", { found: hits.length, already: 0 });
-    return { ok: false, reason: "ambiguous", candidates: hits.slice(0, 5).map(candidateOf) };
+  return Object.fromEntries(byCurrency);
+}
+function graveyardView(history, timeZone) {
+  const sorted = [...history.tombstones].sort(compareTombstones);
+  const lastScanOfMonth = /* @__PURE__ */ new Map();
+  for (const scan of history.scans) {
+    lastScanOfMonth.set(localMonth(scan.scannedAt, timeZone), {
+      undeadCount: scan.undeadCount,
+      yearlyTotals: scan.yearlyTotals
+    });
   }
-  const existing = history.tombstones.find((tomb) => tomb.key === t.key);
-  if (existing !== void 0) {
-    logCounts("bury", { found: 1, already: 1 });
-    return {
-      ok: true,
-      tombstone: viewOf(existing),
-      cancel: cancelDraft(existing),
-      alreadyBuried: true
-    };
+  const monthSet = new Set(lastScanOfMonth.keys());
+  for (const t of history.tombstones) monthSet.add(t.buriedAt.slice(0, 7));
+  let carried = null;
+  const months = [];
+  for (const month of [...monthSet].sort(compareText3)) {
+    carried = lastScanOfMonth.get(month) ?? carried;
+    const buried = history.tombstones.filter((t) => t.buriedAt.slice(0, 7) <= month);
+    months.push({
+      month,
+      undeadCount: carried ? carried.undeadCount : null,
+      yearlyTotals: carried ? carried.yearlyTotals : null,
+      buriedCount: buried.length,
+      cumulativeSavings: savingsOf(buried)
+    });
   }
-  const tombstone = {
-    key: t.key,
-    name: t.merchant,
-    serviceId: t.serviceId,
-    currency: t.currency,
-    cadence: t.cadence,
-    merchantKey: t.merchantKey,
-    amountCents: t.amountCents,
-    cadenceAssumed: t.cadenceAssumed,
-    yearlySavingCents: t.cadenceAssumed ? null : t.amountCents * CADENCE_FACTOR[t.cadence],
-    buriedAt: localDate(context.now(), context.timeZone),
-    risenReportedThrough: null
-  };
-  const next = { ...history, tombstones: [...history.tombstones, tombstone] };
-  await mkdir(context.dataDir, { recursive: true, mode: 448 });
-  const tmpPath = `${historyPath}.tmp-${process.pid}`;
-  await writeFile(tmpPath, JSON.stringify(next), { mode: 384 });
-  await rename(tmpPath, historyPath);
-  logCounts("bury", { found: 1, already: 0 });
-  return {
-    ok: true,
-    tombstone: viewOf(tombstone),
-    cancel: cancelDraft(tombstone),
-    alreadyBuried: false
-  };
+  return { tombstones: sorted.map(viewOf2), savings: savingsOf(history.tombstones), months };
+}
+
+// mcp/src/list-graveyard.ts
+async function listGraveyard(context) {
+  const loaded = await readHistory(context.dataDir);
+  if ("error" in loaded) {
+    logCounts("graveyard", { reason: loaded.error });
+    return { ok: false, reason: loaded.error };
+  }
+  const view = graveyardView(loaded.history, context.timeZone);
+  logCounts("graveyard", { tombstones: view.tombstones.length, months: view.months.length });
+  return { ok: true, ...view };
 }
 
 // mcp/src/scan-statements.ts
-import { randomBytes } from "node:crypto";
-import { mkdir as mkdir2, readdir, readFile as readFile2, rename as rename2, stat, writeFile as writeFile2 } from "node:fs/promises";
-import { basename, join as join3 } from "node:path";
-var MAX_FILES = 120;
-var STATEMENT_NAME = /\.csv$/i;
-function compareCodeUnits(a, b) {
-  return a < b ? -1 : a > b ? 1 : 0;
-}
-function isPlainObject4(value) {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-async function readStatementsFolder(dataDir) {
-  let text;
-  try {
-    text = await readFile2(join3(dataDir, "settings.json"), "utf8");
-  } catch {
-    return null;
-  }
+import { randomBytes as randomBytes3 } from "node:crypto";
+import { readFile as readFile3, stat as stat3 } from "node:fs/promises";
+import { basename, join as join6 } from "node:path";
+
+// shared/src/settings-codec.ts
+function decodeSettings(text) {
   let parsed;
   try {
     parsed = JSON.parse(text);
   } catch {
-    return null;
+    return { kind: "not-configured" };
   }
-  if (!isPlainObject4(parsed) || parsed["version"] !== 1) return null;
-  const folder = parsed["statementsFolder"];
-  return typeof folder === "string" && folder.length > 0 ? folder : null;
+  if (typeof parsed !== "object" || parsed === null || Array.isArray(parsed) || Object.getPrototypeOf(parsed) !== Object.prototype) {
+    return { kind: "not-configured" };
+  }
+  const object3 = parsed;
+  const version2 = Object.hasOwn(object3, "version") ? object3["version"] : void 0;
+  const folder = Object.hasOwn(object3, "statementsFolder") ? object3["statementsFolder"] : void 0;
+  if (version2 !== 1 || typeof folder !== "string" || folder.length === 0) {
+    return { kind: "not-configured" };
+  }
+  return { kind: "ok", settings: { version: 1, statementsFolder: folder } };
 }
-async function folderExists(folder) {
+function encodeSettings(settings) {
+  return JSON.stringify({ version: 1, statementsFolder: settings.statementsFolder }) + "\n";
+}
+
+// mcp/src/merge-transactions.ts
+function compareText4(a, b) {
+  return a < b ? -1 : a > b ? 1 : 0;
+}
+function isBetter3(candidate, current) {
+  if (candidate.length !== current.length) return candidate.length > current.length;
+  for (let i = 0; i < candidate.length; i++) {
+    const order = compareText4(candidate[i]?.json ?? "", current[i]?.json ?? "");
+    if (order !== 0) return order < 0;
+  }
+  return false;
+}
+function mergeOverlap(perFile) {
+  const best = /* @__PURE__ */ new Map();
+  for (const file2 of perFile) {
+    const groups = /* @__PURE__ */ new Map();
+    for (const transaction of file2) {
+      const key = JSON.stringify([
+        transaction.date,
+        transaction.merchant.key,
+        transaction.amountCents,
+        transaction.currency
+      ]);
+      const list = groups.get(key) ?? [];
+      list.push({ json: JSON.stringify(transaction), transaction });
+      groups.set(key, list);
+    }
+    for (const [key, list] of groups) {
+      list.sort((a, b) => compareText4(a.json, b.json));
+      const current = best.get(key);
+      if (current === void 0 || isBetter3(list, current)) best.set(key, list);
+    }
+  }
+  return [...best.entries()].sort(([a], [b]) => compareText4(a, b)).flatMap(([, list]) => list.map((item) => item.transaction));
+}
+
+// mcp/src/decode-bytes.ts
+var BOM = [239, 187, 191];
+function hasBom(bytes) {
+  return bytes.length >= 3 && BOM.every((b, i) => bytes[i] === b);
+}
+function decodeStatementBytes(bytes) {
+  const body = hasBom(bytes) ? bytes.subarray(3) : bytes;
   try {
-    return (await stat(folder)).isDirectory();
+    return new TextDecoder("utf-8", { fatal: true }).decode(body);
   } catch {
-    return false;
+    return new TextDecoder("windows-1252").decode(body);
   }
 }
-function decodeUtf8(bytes) {
-  const start = bytes.length >= 3 && bytes[0] === 239 && bytes[1] === 187 && bytes[2] === 191 ? 3 : 0;
-  return new TextDecoder("utf-8").decode(bytes.subarray(start));
+
+// mcp/src/statement-files.ts
+import { constants as constants2 } from "node:fs";
+import { open as open4, readdir as readdir2 } from "node:fs/promises";
+import { join as join5 } from "node:path";
+var MAX_STATEMENT_FILES = 120;
+var MAX_STATEMENT_BYTES = 5 * 1024 * 1024;
+var CSV_NAME = /\.csv$/iu;
+function compareCodeUnits(a, b) {
+  if (a < b) return -1;
+  return a > b ? 1 : 0;
+}
+async function listStatementFiles(folder) {
+  const entries = await readdir2(folder, { withFileTypes: true });
+  const names = entries.filter((e) => e.isFile() && CSV_NAME.test(e.name) && !e.name.startsWith(".")).map((e) => e.name).sort(compareCodeUnits);
+  return {
+    names: names.slice(0, MAX_STATEMENT_FILES),
+    tooMany: Math.max(0, names.length - MAX_STATEMENT_FILES)
+  };
+}
+async function readStatementFile(folder, name) {
+  let handle;
+  try {
+    handle = await open4(join5(folder, name), constants2.O_RDONLY | constants2.O_NOFOLLOW);
+    const info = await handle.stat();
+    if (info.size > MAX_STATEMENT_BYTES) return { ok: false, kind: "too-large" };
+    const buffer = await handle.readFile();
+    return { ok: true, bytes: new Uint8Array(buffer) };
+  } catch {
+    return { ok: false, kind: "unreadable" };
+  } finally {
+    await handle?.close().catch(() => void 0);
+  }
+}
+
+// mcp/src/read-statements.ts
+function readText(text) {
+  const result = parseStatement(text);
+  if (result.status === "mapping-required") return { ok: false, kind: "unknown-columns" };
+  if (result.status === "error") {
+    const empty = result.reason === EMPTY_CSV_REASON || result.reason === NO_CONTENT_ROWS_REASON;
+    return { ok: false, kind: empty ? "empty" : "parse-error" };
+  }
+  const format = result.detectedDateFormat;
+  if (format?.assumed === true && (format.format === "dd/mm/yyyy" || format.format === "mm/dd/yyyy")) {
+    return { ok: false, kind: "ambiguous-dates" };
+  }
+  if (result.transactions.length === 0) return { ok: false, kind: "empty" };
+  return {
+    ok: true,
+    transactions: normalizeTransactions(result.transactions),
+    rowErrorCount: result.rowErrors.length
+  };
+}
+async function readAll(folder) {
+  const { names, tooMany } = await listStatementFiles(folder);
+  const perFile = [];
+  const skipped = {};
+  let rowErrorCount = 0;
+  const skip = (kind, count = 1) => {
+    skipped[kind] = (skipped[kind] ?? 0) + count;
+  };
+  if (tooMany > 0) skip("too-many", tooMany);
+  for (const name of names) {
+    const file2 = await readStatementFile(folder, name);
+    if (!file2.ok) {
+      skip(file2.kind);
+      continue;
+    }
+    const outcome = readText(decodeStatementBytes(file2.bytes));
+    if (!outcome.ok) {
+      skip(outcome.kind);
+      continue;
+    }
+    perFile.push(outcome.transactions);
+    rowErrorCount += outcome.rowErrorCount;
+  }
+  return { perFile, files: { read: perFile.length, skipped }, rowErrorCount };
+}
+
+// mcp/src/scan-diff.ts
+var POSTING_LAG_DAYS = 3;
+var MS_PER_DAY = 864e5;
+var compareText5 = (a, b) => a < b ? -1 : a > b ? 1 : 0;
+function daysBetween(a, b) {
+  const toUtc = (iso) => {
+    const [year, month, day] = iso.split("-").map(Number);
+    return Date.UTC(year ?? 0, (month ?? 1) - 1, day ?? 1);
+  };
+  return Math.round((toUtc(b) - toUtc(a)) / MS_PER_DAY);
 }
 function yearlyTotalsOf(entries) {
   const totals = {};
@@ -43101,7 +43929,7 @@ function yearlyTotalsOf(entries) {
   }
   return totals;
 }
-function undeadEntryOf(s) {
+function undeadEntryOf(s, buried) {
   const labels = [];
   if (s.labels.includes("possessed")) labels.push("possessed");
   if (s.labels.includes("trial-trap")) labels.push("trial-trap");
@@ -43117,128 +43945,356 @@ function undeadEntryOf(s) {
     labels,
     firstChargeDate: s.evidence.firstChargeDate,
     lastChargeDate: s.evidence.lastChargeDate,
-    buried: false
+    buried
   };
+}
+function diffScan(input2) {
+  const { subs, history, scanId } = input2;
+  const rebaseline = history.scans.length > 0 && history.coreSource !== input2.coreSource;
+  const firstScan = history.scans.length === 0 || rebaseline;
+  const previousScanId = history.scans[history.scans.length - 1]?.scanId ?? null;
+  const tombMatch = matchRecords(subs, history.tombstones, previousScanId);
+  const trackMatch = matchRecords(subs, rebaseline ? [] : history.trackedCharges, previousScanId);
+  const blocked = /* @__PURE__ */ new Set([...tombMatch.blocked, ...trackMatch.blocked]);
+  const active = subs.filter((s) => s.status === "active");
+  const answers = /* @__PURE__ */ new Map();
+  for (const s of active) if (tombMatch.pairs.has(s.id)) answers.set(s.id, "not-using");
+  const classified = classifySubscriptions(active, answers);
+  const rows = classified.map((s) => ({ s, entry: undeadEntryOf(s, tombMatch.pairs.has(s.id)) })).sort(
+    (a, b) => b.entry.yearlyCostCents - a.entry.yearlyCostCents || compareText5(a.entry.name, b.entry.name) || compareText5(a.s.id, b.s.id)
+  );
+  const undead = rows.map((r) => r.entry);
+  const reportedTrials = new Set(history.reportedTrials);
+  const newUndead = [];
+  const possessed = [];
+  const trialTraps = [];
+  const risenAfterBurial = [];
+  const reportedRise = /* @__PURE__ */ new Map();
+  const reportedRisen = /* @__PURE__ */ new Map();
+  const reportedTrialIds = [];
+  for (const { s, entry } of rows) {
+    const isBlocked = blocked.has(s.id);
+    const track = trackMatch.pairs.get(s.id);
+    const tomb = tombMatch.pairs.get(s.id);
+    if (!firstScan && track === void 0 && tomb === void 0 && !isBlocked) {
+      newUndead.push(entry);
+    }
+    const rise = s.priceRise?.latestRise ?? null;
+    if (!firstScan && track !== void 0 && !isBlocked && rise !== null && (track.reportedRiseDate === null || rise.date > track.reportedRiseDate)) {
+      possessed.push({
+        ref: entry.ref,
+        name: entry.name,
+        currency: s.currency,
+        cadence: s.cadence,
+        fromAmountCents: rise.fromAmountCents,
+        toAmountCents: rise.toAmountCents,
+        increasePerYearCents: (rise.toAmountCents - rise.fromAmountCents) * CADENCE_FACTOR[s.cadence]
+      });
+      reportedRise.set(track.key, rise.date);
+    }
+    if (!firstScan && !isBlocked && s.trial !== null && entry.labels.includes("trial-trap") && !reportedTrials.has(s.id)) {
+      trialTraps.push({
+        ref: entry.ref,
+        name: entry.name,
+        currency: s.currency,
+        cadence: s.cadence,
+        amountCents: s.currentAmountCents,
+        firstFullChargeDate: s.trial.firstFullCharge.date
+      });
+      reportedTrialIds.push(s.id);
+    }
+    if (tomb !== void 0 && !isBlocked && daysBetween(tomb.buriedAt, s.evidence.lastChargeDate) > POSTING_LAG_DAYS && (tomb.risenReportedThrough === null || s.evidence.lastChargeDate > tomb.risenReportedThrough)) {
+      risenAfterBurial.push({
+        ref: entry.ref,
+        name: entry.name,
+        currency: s.currency,
+        amountCents: s.currentAmountCents,
+        buriedAt: tomb.buriedAt,
+        lastChargeDate: s.evidence.lastChargeDate
+      });
+      reportedRisen.set(tomb.key, s.evidence.lastChargeDate);
+    }
+  }
+  const yearlyTotals = yearlyTotalsOf(undead);
+  const classifiedById = new Map(rows.map((r) => [r.s.id, r]));
+  const subById = new Map(subs.map((s) => [s.id, s]));
+  const subOfTracked = /* @__PURE__ */ new Map();
+  for (const [subId, record3] of trackMatch.pairs) {
+    const s = subById.get(subId);
+    if (s !== void 0) subOfTracked.set(record3.key, s);
+  }
+  const subOfTomb = /* @__PURE__ */ new Map();
+  for (const [subId, record3] of tombMatch.pairs) {
+    const s = subById.get(subId);
+    if (s !== void 0) subOfTomb.set(record3.key, s);
+  }
+  const keptTracked = rebaseline ? [] : history.trackedCharges;
+  const trackedCharges = keptTracked.map((t) => {
+    const s = subOfTracked.get(t.key);
+    if (s === void 0) return t;
+    const row = classifiedById.get(s.id);
+    if (s.status !== "active" || row === void 0) return { ...t, key: s.id };
+    const rise = row.s.priceRise?.latestRise ?? null;
+    const reportedRiseDate = reportedRise.get(t.key) ?? (firstScan ? rise?.date ?? null : t.reportedRiseDate);
+    return {
+      ...t,
+      key: s.id,
+      merchant: row.entry.name,
+      amountCents: s.currentAmountCents,
+      cadenceAssumed: s.evidence.cadenceAssumed,
+      lastSeenScan: scanId,
+      reportedRiseDate
+    };
+  });
+  for (const { s, entry } of rows) {
+    if (trackMatch.pairs.has(s.id) || blocked.has(s.id)) continue;
+    trackedCharges.push({
+      key: s.id,
+      merchant: entry.name,
+      serviceId: s.serviceId,
+      currency: s.currency,
+      cadence: s.cadence,
+      merchantKey: s.merchantKey,
+      amountCents: s.currentAmountCents,
+      cadenceAssumed: s.evidence.cadenceAssumed,
+      firstSeenScan: scanId,
+      lastSeenScan: scanId,
+      reportedRiseDate: s.priceRise?.latestRise?.date ?? null
+    });
+  }
+  const tombstones = history.tombstones.map((b) => {
+    const s = subOfTomb.get(b.key);
+    if (s === void 0) return b;
+    const through = reportedRisen.get(b.key);
+    return { ...b, key: s.id, ...through === void 0 ? {} : { risenReportedThrough: through } };
+  });
+  const nextTrials = [...history.reportedTrials];
+  const seenTrials = new Set(nextTrials);
+  const addTrial = (id) => {
+    if (seenTrials.has(id)) return;
+    seenTrials.add(id);
+    nextTrials.push(id);
+  };
+  reportedTrialIds.forEach(addTrial);
+  if (firstScan) {
+    for (const { s, entry } of rows) if (entry.labels.includes("trial-trap")) addTrial(s.id);
+  }
+  const record2 = {
+    scanId,
+    scannedAt: input2.now.toISOString(),
+    statementRange: input2.statementRange,
+    undeadCount: undead.length,
+    yearlyTotals,
+    newCount: newUndead.length,
+    possessedCount: possessed.length
+  };
+  const nextHistory = {
+    version: 1,
+    coreSource: input2.coreSource,
+    trackedCharges,
+    tombstones,
+    scans: [...history.scans, record2],
+    reportedTrials: nextTrials
+  };
+  const summary = {
+    scanId,
+    firstScan,
+    folderName: input2.folderName,
+    files: input2.files,
+    statementRange: input2.statementRange,
+    newUndead,
+    possessed,
+    trialTraps,
+    risenAfterBurial,
+    undead,
+    yearlyTotals,
+    historyReset: input2.historyReset,
+    historyDropped: input2.historyDropped
+  };
+  return { summary, nextHistory };
+}
+
+// mcp/src/scan-statements.ts
+var FOLDER_MISSING_CODES = ["ENOENT", "ENOTDIR", "EACCES", "EPERM"];
+async function readStatementsFolder(dataDir) {
+  let text;
+  try {
+    text = await readFile3(join6(dataDir, "settings.json"), "utf8");
+  } catch (error63) {
+    if (error63.code === "ENOENT") return null;
+    throw error63;
+  }
+  const decoded = decodeSettings(text);
+  return decoded.kind === "ok" ? decoded.settings.statementsFolder : null;
+}
+async function folderIsUsable(folder) {
+  try {
+    return (await stat3(folder)).isDirectory();
+  } catch (error63) {
+    const code = error63.code;
+    if (typeof code === "string" && FOLDER_MISSING_CODES.includes(code)) return false;
+    throw error63;
+  }
 }
 function scanIdOf(now) {
   const stamp = now.toISOString().replace(/[-:]/g, "").replace(/\.\d+Z$/, "Z");
-  return `scan-${stamp}-${randomBytes(3).toString("hex")}`;
+  return `scan-${stamp}-${randomBytes3(3).toString("hex")}`;
 }
-async function readExisting(path) {
-  try {
-    const parsed = JSON.parse(await readFile2(path, "utf8"));
-    if (!isPlainObject4(parsed)) return { tombstones: [], scans: [] };
-    const tombstones = parsed["tombstones"];
-    const scans = parsed["scans"];
-    return {
-      // Interim: the arrays are kept as read, without checking their records. Task 12 adds the
-      // History codec that validates them; until then this file is only written by this skeleton.
-      tombstones: Array.isArray(tombstones) ? tombstones : [],
-      scans: Array.isArray(scans) ? scans : []
-    };
-  } catch {
-    return { tombstones: [], scans: [] };
-  }
+async function readAndDetect(folder) {
+  const { perFile, files, rowErrorCount } = await readAll(folder);
+  if (files.read === 0) return null;
+  const detection = detectSubscriptions(mergeOverlap(perFile));
+  const { firstDate, lastDate } = detection.statement;
+  if (firstDate === null || lastDate === null) return null;
+  return {
+    subs: detection.subscriptions,
+    statementRange: { from: firstDate, to: lastDate },
+    files,
+    rowErrorCount
+  };
 }
 async function scanStatements(context) {
   const folder = await readStatementsFolder(context.dataDir);
   if (folder === null) return { ok: false, reason: "not-configured" };
-  if (!await folderExists(folder)) return { ok: false, reason: "folder-missing" };
-  const entries = await readdir(folder, { withFileTypes: true });
-  const names = entries.filter((e) => e.isFile() && !e.name.startsWith(".") && STATEMENT_NAME.test(e.name)).map((e) => e.name).sort(compareCodeUnits).slice(0, MAX_FILES);
-  const skipped = {};
-  const skip = (kind) => {
-    skipped[kind] = (skipped[kind] ?? 0) + 1;
-  };
-  const transactions = [];
-  let read = 0;
-  for (const name of names) {
-    const result = parseStatement(decodeUtf8(await readFile2(join3(folder, name))));
-    if (result.status === "mapped") {
-      read += 1;
-      transactions.push(...normalizeTransactions(result.transactions));
-    } else if (result.status === "mapping-required") skip("unknown-columns");
-    else skip("parse-error");
-  }
-  if (read === 0) return { ok: false, reason: "no-statements" };
-  const detection = detectSubscriptions(transactions);
-  const { firstDate, lastDate } = detection.statement;
-  if (firstDate === null || lastDate === null) return { ok: false, reason: "no-statements" };
-  const active = detection.subscriptions.filter((s) => s.status === "active");
-  const classified = classifySubscriptions(active, /* @__PURE__ */ new Map());
-  const undead = classified.map((s) => ({ s, entry: undeadEntryOf(s) })).sort(
-    (a, b) => b.entry.yearlyCostCents - a.entry.yearlyCostCents || compareCodeUnits(a.entry.name, b.entry.name) || compareCodeUnits(a.s.id, b.s.id)
-  );
-  const undeadEntries = undead.map((u) => u.entry);
-  const yearlyTotals = yearlyTotalsOf(undeadEntries);
+  if (!await folderIsUsable(folder)) return { ok: false, reason: "folder-missing" };
+  const detected = await readAndDetect(folder);
+  if (detected === null) return { ok: false, reason: "no-statements" };
   const now = context.now();
   const scanId = scanIdOf(now);
-  const statementRange = { from: firstDate, to: lastDate };
-  const trackedCharges = undead.map(({ s, entry }) => ({
-    key: s.id,
-    merchant: entry.name,
-    serviceId: s.serviceId,
-    currency: s.currency,
-    cadence: s.cadence,
-    merchantKey: s.merchantKey,
-    amountCents: s.currentAmountCents,
-    cadenceAssumed: s.evidence.cadenceAssumed,
-    firstSeenScan: scanId,
-    lastSeenScan: scanId,
-    reportedRiseDate: s.priceRise?.latestRise?.date ?? null
-  }));
-  const historyPath = join3(context.dataDir, "history.json");
-  const existing = await readExisting(historyPath);
-  const record2 = {
-    scanId,
-    scannedAt: now.toISOString(),
-    statementRange,
-    undeadCount: undeadEntries.length,
-    yearlyTotals,
-    newCount: 0,
-    possessedCount: 0
-  };
-  const history = {
-    version: 1,
-    coreSource: context.coreSource,
-    trackedCharges,
-    tombstones: existing.tombstones,
-    scans: [...existing.scans, record2],
-    reportedTrials: []
-  };
-  await mkdir2(context.dataDir, { recursive: true, mode: 448 });
-  const tmpPath = `${historyPath}.tmp-${process.pid}`;
-  await writeFile2(tmpPath, JSON.stringify(history), { mode: 384 });
-  await rename2(tmpPath, historyPath);
-  const skippedTotal = Object.values(skipped).reduce((sum, n) => sum + n, 0);
+  await ensureDataDir(context.dataDir);
+  const locked = await withHistoryLock(
+    context.dataDir,
+    async () => {
+      const loaded = await loadHistoryForWrite(context.dataDir, now);
+      if ("error" in loaded) return { ok: false, reason: loaded.error };
+      const { summary: summary2, nextHistory } = diffScan({
+        subs: detected.subs,
+        history: loaded.history,
+        coreSource: context.coreSource,
+        scanId,
+        now,
+        folderName: basename(folder),
+        files: detected.files,
+        statementRange: detected.statementRange,
+        historyReset: loaded.reset,
+        historyDropped: loaded.dropped
+      });
+      await saveHistory(context.dataDir, nextHistory);
+      return { ok: true, summary: summary2 };
+    },
+    context.lock?.timings,
+    context.lock?.clock
+  );
+  if (!locked.ok) return { ok: false, reason: locked.reason };
+  const { summary } = locked;
+  const skippedTotal = Object.values(detected.files.skipped).reduce((sum, n) => sum + n, 0);
   logCounts("scan", {
-    read,
+    read: detected.files.read,
     skipped: skippedTotal,
-    undead: undeadEntries.length,
-    new: 0,
-    possessed: 0
+    rowErrors: detected.rowErrorCount,
+    undead: summary.undead.length,
+    new: summary.newUndead.length,
+    possessed: summary.possessed.length
   });
-  const summary = {
-    scanId,
-    firstScan: true,
-    folderName: basename(folder),
-    files: { read, skipped },
-    statementRange,
-    newUndead: [],
-    possessed: [],
-    trialTraps: [],
-    risenAfterBurial: [],
-    undead: undeadEntries,
-    yearlyTotals,
-    historyReset: false,
-    historyDropped: 0
-  };
   return { ok: true, ...summary };
+}
+
+// mcp/src/set-statements-folder.ts
+import { homedir } from "node:os";
+import { basename as basename2, isAbsolute, resolve as resolve2, sep } from "node:path";
+import { realpath, readdir as readdir3, stat as stat4 } from "node:fs/promises";
+function expandHome(path) {
+  if (path === "~") return homedir();
+  if (path.startsWith("~/")) return homedir() + path.slice(1);
+  return path;
+}
+function fail3(reason) {
+  logCounts("set-folder", { reason });
+  return { ok: false, reason };
+}
+function reasonOfPathError(error63) {
+  const code = error63?.code;
+  const missing = ["ENOENT", "ENOTDIR", "ENAMETOOLONG", "ERR_INVALID_ARG_VALUE"];
+  return typeof code === "string" && missing.includes(code) ? "not-found" : "not-readable";
+}
+async function setStatementsFolder(context, args) {
+  const expanded = expandHome(args.path);
+  if (!isAbsolute(expanded)) return fail3("not-absolute");
+  const resolved = resolve2(expanded);
+  let real;
+  try {
+    real = await realpath(resolved);
+  } catch (error63) {
+    return fail3(reasonOfPathError(error63));
+  }
+  try {
+    if (!(await stat4(real)).isDirectory()) return fail3("not-a-folder");
+  } catch (error63) {
+    return fail3(reasonOfPathError(error63));
+  }
+  const realApp = await realpath(context.appRoot);
+  if (real === realApp || real.startsWith(realApp + sep)) return fail3("inside-app");
+  try {
+    await readdir3(real);
+  } catch {
+    return fail3("not-readable");
+  }
+  const files = await listStatementFiles(real).catch(() => null);
+  if (files === null) return fail3("not-readable");
+  await ensureDataDir(context.dataDir);
+  await writeFileAtomic(
+    context.dataDir,
+    "settings.json",
+    encodeSettings({ version: 1, statementsFolder: resolved })
+  );
+  const statementFileCount = files.names.length + files.tooMany;
+  logCounts("set-folder", { files: statementFileCount });
+  return { ok: true, folderName: basename2(resolved), statementFileCount };
+}
+
+// mcp/src/unbury.ts
+async function unbury(context, args) {
+  await ensureDataDir(context.dataDir);
+  return withHistoryLock(
+    context.dataDir,
+    async () => {
+      const loaded = await loadHistoryForWrite(context.dataDir, context.now());
+      if ("error" in loaded) return { ok: false, reason: loaded.error };
+      const { history } = loaded;
+      const notes = {
+        ...loaded.reset ? { historyReset: true } : {},
+        ...loaded.dropped > 0 ? { historyDropped: loaded.dropped } : {}
+      };
+      const entries = history.tombstones.map((t) => ({ ...t, merchant: t.name }));
+      const resolution = resolveService(args.service, entries);
+      if (resolution.kind !== "one") {
+        const found = resolution.kind === "several" ? resolution.candidates.length : 0;
+        logCounts("unbury", { found });
+        return {
+          ok: false,
+          reason: resolution.kind === "several" ? "ambiguous" : "not-found",
+          candidates: resolution.candidates.map(candidateOf)
+        };
+      }
+      const { key, name } = resolution.entry;
+      await saveHistory(context.dataDir, {
+        ...history,
+        tombstones: history.tombstones.filter((t) => t.key !== key)
+      });
+      logCounts("unbury", { found: 1 });
+      return { ok: true, name, ...notes };
+    },
+    context.lock?.timings,
+    context.lock?.clock
+  );
 }
 
 // mcp/src/tools.ts
 var BURY_DESCRIPTION = "Records that the user chose to cancel one current recurring charge and returns a cancel link or a cancellation email draft. The service text is a name as the user wrote it, optionally followed by an amount such as 16.99. Drafts only; never cancels, logs in or sends.";
+var UNBURY_DESCRIPTION = "Removes one tombstone, for when the user changes their mind.";
+var GRAVEYARD_DESCRIPTION = "Returns the tombstones, the yearly savings per currency and a month-by-month history.";
 var SCAN_DESCRIPTION = "Reads the CSV statements in the user's statements folder in place, finds recurring charges with Zombills core and compares them with earlier scans. Returns a summary only: new undead, possessed charges, trial traps, charges that rose after burial, all current undead and yearly totals. Never returns transactions.";
+var SET_FOLDER_DESCRIPTION = "Sets the folder of bank statement CSVs the Reaper reads in place. The path you pass is a tool argument, so it reaches the model provider and Crew's transcripts. Editing data/settings.json by hand keeps it on this machine.";
 function guarded(tool, handler) {
   return async (args) => {
     try {
@@ -43261,11 +44317,30 @@ function createReaperTools(context) {
     inputSchema: external_exports.object({}).strict(),
     handler: guarded("scan_statements", () => scanStatements(context))
   });
+  tools2.set("list_graveyard", {
+    description: GRAVEYARD_DESCRIPTION,
+    inputSchema: external_exports.object({}).strict(),
+    handler: guarded("list_graveyard", () => listGraveyard(context))
+  });
   const buryInput = external_exports.object({ service: external_exports.string().min(1).max(400) }).strict();
   tools2.set("bury", {
     description: BURY_DESCRIPTION,
     inputSchema: buryInput,
     handler: guarded("bury", (args) => bury(context, buryInput.parse(args)))
+  });
+  tools2.set("unbury", {
+    description: UNBURY_DESCRIPTION,
+    inputSchema: buryInput,
+    handler: guarded("unbury", (args) => unbury(context, buryInput.parse(args)))
+  });
+  const folderInput = external_exports.object({ path: external_exports.string().min(1).max(4096) }).strict();
+  tools2.set("set_statements_folder", {
+    description: SET_FOLDER_DESCRIPTION,
+    inputSchema: folderInput,
+    handler: guarded(
+      "set_statements_folder",
+      (args) => setStatementsFolder(context, folderInput.parse(args))
+    )
   });
   return tools2;
 }

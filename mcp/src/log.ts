@@ -1,9 +1,11 @@
 import type { Reason } from "../../shared/src/types.ts";
 
-export type LogEvent = "scan" | "bury" | "unbury" | "set-folder" | "tool-error" | "lock-takeover";
+export type LogEvent =
+  "scan" | "graveyard" | "bury" | "unbury" | "set-folder" | "tool-error" | "lock-takeover";
 
 /** Tool names a log line may carry. Later tasks add their names here. */
-export type ToolName = "scan_statements" | "bury";
+export type ToolName =
+  "scan_statements" | "list_graveyard" | "bury" | "unbury" | "set_statements_folder";
 
 /** Error names a log line may carry. Anything else is logged as "Error". */
 export type ErrorName = "Error" | "TypeError" | "RangeError" | "SyntaxError" | "SystemError";
