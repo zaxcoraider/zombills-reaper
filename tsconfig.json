@@ -1,0 +1,20 @@
+{
+  "compilerOptions": {
+    "strict": true,
+    "exactOptionalPropertyTypes": true,
+    "noUncheckedIndexedAccess": true,
+    "target": "ES2023",
+    "lib": ["ES2023", "DOM"],
+    "module": "NodeNext",
+    "moduleResolution": "NodeNext",
+    "noEmit": true,
+    "allowImportingTsExtensions": true,
+    "jsx": "react",
+    "jsxFactory": "h",
+    "jsxFragmentFactory": "Fragment",
+    "types": ["node"],
+    "skipLibCheck": true
+  },
+  "include": ["*.ts", "shared", "mcp", "backend", "ui", "scripts"],
+  "exclude": ["node_modules", "vendor", "**/dist"]
+}

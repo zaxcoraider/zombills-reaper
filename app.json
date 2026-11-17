@@ -1,0 +1,53 @@
+{
+  "name": "zombills-reaper",
+  "version": "0.1.0",
+  "displayName": "The Reaper",
+  "description": "Checks your bank statement CSVs every month, on your own machine, and tells you when a new recurring charge appears or a price goes up.",
+  "permissions": {
+    "cron": true,
+    "mcpTools": ["send_message"],
+    "api": ["/apps/zombills-reaper/api"]
+  },
+  "agents": ["agents/reaper.json"],
+  "skills": ["skills/reaper"],
+  "mcpServers": {
+    "reaper": {
+      "command": "/bin/sh",
+      "args": ["-c", "exec node \"$HOME/.kiro/crew/apps/zombills-reaper/mcp/dist/server.js\""]
+    }
+  },
+  "crons": [
+    {
+      "name": "monthly-scan",
+      "cron_expr": "0 9 1 * *",
+      "agent": "reaper",
+      "message": "Run the monthly round of the reaper skill.",
+      "silent": true,
+      "strict_schedule": true,
+      "persistent_session": false,
+      "enabled": true
+    }
+  ],
+  "backend": {
+    "entryPoint": "backend/dist/server.js",
+    "type": "node",
+    "port": "auto",
+    "healthCheck": "/api/health"
+  },
+  "ui": {
+    "entry": "dist/index.mjs",
+    "pages": [{ "route": "/apps/zombills-reaper", "label": "Graveyard", "icon": "Skull" }]
+  },
+  "setup": {
+    "configSchema": {
+      "type": "object",
+      "required": ["statementsFolder"],
+      "properties": {
+        "statementsFolder": {
+          "type": "string",
+          "description": "Folder of bank statement CSVs, read in place and never uploaded. In Crew 0.12.2 this value is not passed to apps: tell the Reaper agent the folder, or edit data/settings.json in the app folder."
+        }
+      }
+    }
+  }
+}

@@ -1,0 +1,34 @@
+{
+  "name": "@zombills/core",
+  "version": "0.0.0",
+  "description": "Parser, normaliser, detector, classifier and cancel DB for Zombills. Runs in the browser; statement data never leaves the device.",
+  "license": "MIT",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "test": "vitest run",
+    "typecheck": "tsc --noEmit -p tsconfig.json && tsc --noEmit -p tsconfig.test.json",
+    "lint": "eslint src"
+  },
+  "dependencies": {
+    "papaparse": "5.7.1"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "@types/papaparse": "5.5.2",
+    "fast-check": "4.10.2",
+    "vite": "8.3.8",
+    "vitest": "5.1.0"
+  }
+}
