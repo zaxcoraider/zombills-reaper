@@ -8,6 +8,7 @@ import {
   setupTelegramAgent,
   SOURCE_FILE,
   TARGET_FILE,
+  TELEGRAM_NOTE,
 } from "./setup-telegram-agent.ts";
 
 const SOURCE = {
@@ -51,7 +52,7 @@ describe("setupTelegramAgent", () => {
     expect(agent).toEqual({
       name: "reaper-chat",
       description: CHAT_DESCRIPTION,
-      prompt: SOURCE.prompt,
+      prompt: `${SOURCE.prompt}\n\n${TELEGRAM_NOTE}`,
       tools: SOURCE.tools,
       allowedTools: SOURCE.allowedTools,
       mcpServers: SOURCE.mcpServers,
@@ -69,7 +70,12 @@ describe("setupTelegramAgent", () => {
     await writeFile(join(agentsDir, SOURCE_FILE), JSON.stringify({ ...SOURCE, prompt: "newer" }));
     const result = await setupTelegramAgent({ home });
     expect(result.created).toBe(false);
-    expect((await readTarget())["prompt"]).toBe("newer");
+    expect((await readTarget())["prompt"]).toBe(`newer\n\n${TELEGRAM_NOTE}`);
+    expect(String((await readTarget())["prompt"]).split(TELEGRAM_NOTE)).toHaveLength(2);
+  });
+
+  it("holds no exclamation point in the Telegram note", () => {
+    expect(TELEGRAM_NOTE).not.toContain("!");
   });
 
   it("refuses to overwrite a file it did not create", async () => {

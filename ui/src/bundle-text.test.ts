@@ -20,10 +20,16 @@ describe("ui/dist/index.mjs text", () => {
     expect(BUNDLE).not.toContain("https://");
   });
 
-  it("imports only react and @kirocrew/app-sdk as bare specifiers", () => {
+  it("imports only react, @kirocrew/app-sdk and @kirocrew/app-sdk/ui as bare specifiers", () => {
     const bare = specifiers(BUNDLE).filter((s) => !s.startsWith(".") && !s.startsWith("/"));
     expect(bare.length).toBeGreaterThan(0);
-    for (const specifier of bare) expect(["react", "@kirocrew/app-sdk"]).toContain(specifier);
+    for (const specifier of bare) {
+      expect(["react", "@kirocrew/app-sdk", "@kirocrew/app-sdk/ui"]).toContain(specifier);
+    }
+  });
+
+  it("imports @kirocrew/app-sdk/ui as a bare specifier", () => {
+    expect(specifiers(BUNDLE)).toContain("@kirocrew/app-sdk/ui");
   });
 
   it("has no react/jsx-runtime, react-dom or lucide-react import", () => {

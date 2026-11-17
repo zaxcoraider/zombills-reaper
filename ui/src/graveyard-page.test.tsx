@@ -1,5 +1,5 @@
 import { createElement as h } from "react";
-import { cleanup, fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { cleanup, fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { GraveyardPage } from "./graveyard-page.tsx";
 
@@ -185,10 +185,14 @@ describe("GraveyardPage", () => {
     get.mockResolvedValue(FULL);
     render(<GraveyardPage />);
     await screen.findByRole("heading", { level: 1, name: "The graveyard" });
-    const items = screen.getAllByRole("listitem").map((li) => li.textContent ?? "");
-    expect(items.map((t) => t.split(":")[0])).toEqual(["Gym", "Cloud", "Netflix"]);
-    expect(items[2]).toBe("Netflix: $15.49 a month, saves $185.88 a year, buried 2026-02-03");
-    expect(items[1]).toContain("£40.00 a year");
+    const items = screen.getAllByRole("listitem");
+    const names = items.map((li) => (li.querySelector("h3")?.textContent ?? "").replace("⚰ ", ""));
+    expect(names).toEqual(["Gym", "Cloud", "Netflix"]);
+    const netflix = items[2] as HTMLElement;
+    expect(within(netflix).getByText("$15.49 a month")).toBeTruthy();
+    expect(within(netflix).getByText("saves $185.88 a year")).toBeTruthy();
+    expect(within(netflix).getByText("buried 2026-02-03")).toBeTruthy();
+    expect(items[1]?.textContent).toContain("£40.00 a year");
   });
 
   it("shows the chart only with the table, and hides the chart from assistive tech", async () => {
@@ -197,8 +201,83 @@ describe("GraveyardPage", () => {
     await screen.findByRole("heading", { level: 1, name: "The graveyard" });
     const svg = container.querySelector("svg");
     expect(svg?.getAttribute("aria-hidden")).toBe("true");
-    expect(svg?.querySelector("text")).toBeNull();
-    expect(container.querySelector("table")).not.toBeNull();
+    const table = container.querySelector("table");
+    expect(table).not.toBeNull();
+    const shown = new Set<string>();
+    for (const cell of Array.from(table?.querySelectorAll("th, td") ?? [])) {
+      for (const part of (cell.textContent ?? "").split(", ")) shown.add(part);
+    }
+    const legend = ["Yearly cost (USD)", "Saved so far (USD)"];
+    const texts = Array.from(svg?.querySelectorAll("text") ?? []).map((t) => t.textContent ?? "");
+    expect(texts.length).toBeGreaterThan(0);
+    for (const text of texts) {
+      // "$0.00" is the axis origin; every other money value is in the table.
+      expect(legend.includes(text) || shown.has(text) || text === "$0.00").toBe(true);
+    }
+  });
+
+  it("shows three stat cards", async () => {
+    get.mockResolvedValue(FULL);
+    render(<GraveyardPage />);
+    await screen.findByRole("heading", { level: 1, name: "The graveyard" });
+    const cards = Array.from(document.querySelectorAll('[data-host="StatCard"]')).map((el) =>
+      Array.from(el.children).map((c) => c.textContent),
+    );
+    expect(cards).toEqual([
+      ["Saved per year", "£40.00, $185.88"],
+      ["Undead", "3"],
+      ["Yearly cost", "$300.00"],
+    ]);
+  });
+
+  it("shows a dash for Undead and Yearly cost without a scan", async () => {
+    get.mockResolvedValue(DATA);
+    render(<GraveyardPage />);
+    await screen.findByRole("heading", { level: 1, name: "The graveyard" });
+    const cards = Array.from(document.querySelectorAll('[data-host="StatCard"]')).map((el) =>
+      Array.from(el.children).map((c) => c.textContent),
+    );
+    expect(cards).toEqual([
+      ["Saved per year", "$185.88"],
+      ["Undead", "—"],
+      ["Yearly cost", "—"],
+    ]);
+  });
+
+  it("shows a dash for Saved per year without Tombstones", async () => {
+    get.mockResolvedValue({ ...FULL, tombstones: [], savings: {}, months: [] });
+    render(<GraveyardPage />);
+    await screen.findByRole("heading", { level: 1, name: "The graveyard" });
+    const first = document.querySelector('[data-host="StatCard"]');
+    expect(first?.textContent).toBe("Saved per year—");
+  });
+
+  it("titles each Tombstone card with the name and lists them in one list", async () => {
+    get.mockResolvedValue(FULL);
+    const { container } = render(<GraveyardPage />);
+    await screen.findByRole("heading", { level: 1, name: "The graveyard" });
+    const lists = screen.getAllByRole("list");
+    expect(lists.length).toBe(1);
+    const items = within(lists[0] as HTMLElement).getAllByRole("listitem");
+    expect(items.length).toBe(3);
+    for (const item of items) {
+      expect(item.querySelector('[data-host="Card"]')).not.toBeNull();
+      expect(item.querySelector('[data-host="CardTitle"]')?.textContent).toMatch(/^⚰ \S/);
+    }
+    expect(items[2]?.querySelector("h3")?.textContent).toBe("⚰ Netflix");
+    expect(container.querySelector('[data-host="Badge"]')?.textContent).toBe(
+      "saving not counted (cadence guessed)",
+    );
+  });
+
+  it("has exactly one h1 and renders the host components", async () => {
+    get.mockResolvedValue(FULL);
+    const { container } = render(<GraveyardPage />);
+    await screen.findByRole("heading", { level: 1, name: "The graveyard" });
+    expect(container.querySelectorAll("h1").length).toBe(1);
+    for (const name of ["PageHeader", "StatCard", "Card", "CardTitle"]) {
+      expect(container.querySelector(`[data-host="${name}"]`)).not.toBeNull();
+    }
   });
 
   it("says nothing is buried yet, with the last scan, when there are scans but no Tombstones", async () => {

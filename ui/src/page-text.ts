@@ -30,4 +30,8 @@ export const PAGE_TEXT = {
   amountPer: (money: string, cadence: Cadence): string => `${money} a ${CADENCE_WORD[cadence]}`,
   saves: (money: string): string => `saves ${money} a year`,
   buriedOn: (date: string): string => `buried ${date}`,
+  savedPerYear: "Saved per year",
+  tombstoneTitle: (name: string): string => `⚰ ${name}`,
+  legendCost: (currency: string): string => `Yearly cost (${currency})`,
+  legendSaved: (currency: string): string => `Saved so far (${currency})`,
 } as const;

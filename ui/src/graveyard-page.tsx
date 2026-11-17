@@ -1,9 +1,12 @@
 import { createElement as h, useEffect, useRef, useState } from "react";
 import { useAppApi } from "@kirocrew/app-sdk";
+import { Card, CardTitle, PageHeader } from "@kirocrew/app-sdk/ui";
+import { localDate } from "../../shared/src/local-date.ts";
 import { isGraveyardResponse } from "./graveyard-response.ts";
 import type { GraveyardReply } from "./graveyard-response.ts";
 import { PAGE_TEXT } from "./page-text.ts";
 import { SavingsHeadline } from "./savings-headline.tsx";
+import { StatRow } from "./stat-row.tsx";
 import { TimelineChart } from "./timeline-chart.tsx";
 import { TimelineTable } from "./timeline-table.tsx";
 import { TombstoneList } from "./tombstone-list.tsx";
@@ -14,6 +17,10 @@ type PageState =
   | { kind: "loading" }
   | { kind: "error" }
   | { kind: "ready"; reply: Extract<GraveyardReply, { ok: true }> };
+
+function browserZone(): string {
+  return Intl.DateTimeFormat().resolvedOptions().timeZone;
+}
 
 export function GraveyardPage() {
   const api = useAppApi();
@@ -64,25 +71,46 @@ export function GraveyardPage() {
   }
   if (state.kind === "error") {
     return (
-      <div style={{ padding: "1rem" }}>
+      <Card>
         <p>{PAGE_TEXT.error}</p>
         <button type="button" onClick={retry}>
           {PAGE_TEXT.retry}
         </button>
-      </div>
+      </Card>
     );
   }
   const { reply } = state;
-  const isEmpty = reply.tombstones.length === 0 && reply.lastScan === null;
+  const { lastScan } = reply;
   return (
     <div style={{ padding: "1rem" }}>
-      <SavingsHeadline data={reply} headingRef={heading} />
-      {isEmpty ? <p>{PAGE_TEXT.empty}</p> : null}
+      <PageHeader
+        title={
+          <h1
+            ref={heading}
+            tabIndex={-1}
+            style={{ margin: 0, font: "inherit", letterSpacing: "inherit" }}
+          >
+            {PAGE_TEXT.heading}
+          </h1>
+        }
+        subtitle={
+          lastScan === null
+            ? undefined
+            : PAGE_TEXT.lastChecked(
+                localDate(new Date(lastScan.scannedAt), browserZone()),
+                lastScan.statementRange.from,
+                lastScan.statementRange.to,
+              )
+        }
+      />
+      <StatRow data={reply} />
+      <SavingsHeadline data={reply} />
       {reply.months.length > 0 ? (
-        <section>
+        <Card>
+          <CardTitle>{PAGE_TEXT.tableCaption}</CardTitle>
           <TimelineChart months={reply.months} />
           <TimelineTable months={reply.months} />
-        </section>
+        </Card>
       ) : null}
       <TombstoneList tombstones={reply.tombstones} />
     </div>

@@ -334,6 +334,8 @@ Check these on the local Crew 0.12.2 before writing `design.md`:
 5. Wording SHALL use "new undead", "possessed", "trial trap", "buried" and "tombstone". It SHALL say "zombie" only for a service the user has buried. It SHALL NOT use exclamation points, threats, urgency ("act now", "before it's too late"), or claims the Reaper cannot back (that a charge is unused, a fraud, or will rise again).
 6. WHEN a tool returns `"not-configured"` or `"folder-missing"` in a chat, THE agent SHALL ask the user in that chat which folder to watch, say the folder is read where it is and never uploaded, and mention that editing `settings.json` by hand keeps the path off the model provider (Requirement 3.6). WHEN this happens in the monthly round, THE agent SHALL send one Telegram message that carries no data: "The Reaper has no statements folder yet. Set it in the Crew dashboard chat."
 7. ON "bury <service>", THE agent SHALL call `bury`. WHEN `ok`, it SHALL reply with the Tombstone line ("⚰️ Netflix is buried. You save $215.88 a year.") and the draft: for a link, the URL and up to 3 steps; for an email, the subject and body as a block the user can copy, and the `mailto:` link. It SHALL say that the user still has to cancel with the service. WHEN `not-found` or `ambiguous`, it SHALL list the candidates with name, price and cadence and ask which one, accepting a reply such as "bury Spotify 16.99". It SHALL never guess a service.
+
+   > **Amended by Batch 9 (user approved 2026-11-17)** (`tasks.md`, task 31): Telegram does not render a markdown `mailto:` link and showed it as a raw percent-encoded wall. WHEN the reply is shown in Telegram (a Delivery message, or a reply in a Telegram conversation), the email draft SHALL be the subject and the body as a plain-text fenced block marked `text`, with no `mailto:` link in any form. In the Crew dashboard chat the `mailto:` link stays.
 8. ON "unbury <service>", THE agent SHALL call `unbury` and confirm in one line. ON "graveyard", it SHALL call `list_graveyard` and reply with the Tombstones and the yearly savings per currency.
 9. ON `risenAfterBurial`, THE message SHALL say plainly that the service charged again after it was buried and that the cancellation may not have gone through.
 10. THE skill SHALL NOT restate detection or classification rules; it refers to tool results only.
@@ -385,13 +387,19 @@ Check these on the local Crew 0.12.2 before writing `design.md`:
 
    > **Amended by spike 2026-11-17** (`spike-2026-11-17.md`): the bundle SHALL export a React function component named `mount` (and the same as default); the host renders it as a component, and a DOM-style `mount(el)` crashes. Bare imports of `react` and `@kirocrew/app-sdk` resolve through the host import map; `lucide-react` and `react-dom` were not tested and the page SHALL NOT import them. The page route SHALL be `/apps/zombills-reaper` (the form Crew documents and the spike used), not `/graveyard`.
 
+   > **Amended by Batch 9 (user approved 2026-11-17)** (`tasks.md`, task 32): the page MAY also import the host components of `@kirocrew/app-sdk/ui` (`PageHeader`, `StatCard`, `Card`, `CardTitle`, `EmptyState`, `Badge`, exact names as exported by the dashboard bundle), provided the host import map lists that specifier. It stays external.
+
 2. THE page SHALL load its data only with `useAppApi` from `GET /api/graveyard`, and SHALL show a loading state, an error state ("The graveyard could not be read.") with a retry button, and an empty state ("Nothing buried yet. The Reaper checks your statements on the 1st of each month.").
 
    > **Amended by spike 2026-11-17** (`spike-2026-11-17.md`): the path SHALL be `/apps/zombills-reaper/api/graveyard`; `api.get("/api/…")` is refused as Crew's own namespace.
 
 3. WHEN data is present, THE page SHALL show: the yearly savings per currency (Money text) as the headline; a month-by-month timeline, oldest to newest, of undead count, yearly cost per currency and cumulative savings, as an equivalent table for screen readers and *(Should)* as a chart; the Tombstones, newest first, with name, Money text per charge and cadence, yearly saving and burial date; and the date of the last scan.
+
+   > **Amended by Batch 9 (user approved 2026-11-17)** (`tasks.md`, task 32): the headline adds three stat cards (saved per year, undead count, yearly cost); the Tombstones show as cards (`⚰ <name>`, price per charge, yearly saving, burial date). The chart SHALL read correctly with one month and with up to 24: fixed bar width, axis and value labels, bars for yearly cost and saved so far, colours from the host theme's CSS variables.
 4. A guessed-cadence Tombstone SHALL show "saving not counted (cadence guessed)" and SHALL NOT count in totals.
 5. THE page SHALL load no font, image, style or script from any host. Names SHALL be shown as text only, with no logos.
+
+   > **Amended by Batch 9 (user approved 2026-11-17)** (`tasks.md`, task 32): the page MAY use the host's own theme classes and CSS variables, which the dashboard already loads. It still loads nothing from any host itself.
 6. THE page SHALL meet WCAG AA contrast and work by keyboard; the chart SHALL NOT be the only way to read a number.
 7. Copy SHALL follow the tone of Requirement 9.5.
 8. Component tests SHALL cover each state of Criterion 2, the data view of Criterion 3 with two currencies, and Criterion 4, with `useAppApi` mocked.

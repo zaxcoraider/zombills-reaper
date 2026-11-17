@@ -2,6 +2,7 @@ import { readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { describe, expect, it } from "vitest";
+import { TELEGRAM_NOTE } from "./scripts/setup-telegram-agent.ts";
 
 const ROOT = dirname(fileURLToPath(import.meta.url));
 const SKILL = readFileSync(join(ROOT, "skills/reaper/SKILL.md"), "utf8");
@@ -163,6 +164,19 @@ describe("skills/reaper/SKILL.md", () => {
     expect(bury).toContain("Never guess");
     expect(sectionText(8)).toContain("`<name> is out of the graveyard.`");
     expect(sectionText(8)).toContain("`<name>, buried <date>, saves <yearly> a year`");
+  });
+
+  it("defines the Telegram email format in Delivery and Bury (Req 9.7)", () => {
+    const delivery = sectionText(4);
+    expect(delivery).toContain(TELEGRAM_NOTE);
+    expect(delivery).toContain("```text");
+    expect(delivery).toContain("Copy the subject and body into a new email to the service.");
+    expect(delivery).toContain("The mailto link is left out in Telegram");
+    const bury = sectionText(7);
+    expect(bury).toContain("```text");
+    expect(bury).toContain("mailto");
+    expect(bury).toContain("Telegram format of the Delivery section");
+    expect(SKILL).not.toMatch(/\]\(mailto:/);
   });
 
   it("repeats the prohibition of the agent prompt in Rules (Req 9.11, 8.2)", () => {

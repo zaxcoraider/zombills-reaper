@@ -11,6 +11,9 @@ export const TARGET_FILE = "reaper-chat.json";
 export const CHAT_NAME = "reaper-chat";
 export const CHAT_DESCRIPTION = "The Reaper (Zombills): bury, unbury and graveyard from chat.";
 
+export const TELEGRAM_NOTE =
+  "This copy of the Reaper answers in Telegram. Every conversation here is a Telegram conversation.";
+
 const COPIED_FIELDS = ["prompt", "tools", "allowedTools", "mcpServers"] as const;
 
 export type SetupResult = { path: string; created: boolean };
@@ -34,6 +37,8 @@ export function buildChatAgent(sourceText: string): string {
     if (source[field] === undefined) throw new Error(`${SOURCE_FILE} has no ${field}`);
     agent[field] = source[field];
   }
+  if (typeof agent["prompt"] !== "string") throw new Error(`${SOURCE_FILE} prompt is not text`);
+  agent["prompt"] = `${agent["prompt"]}\n\n${TELEGRAM_NOTE}`;
   return JSON.stringify(agent, null, 2) + "\n";
 }
 
