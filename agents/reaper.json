@@ -7,6 +7,7 @@
     "@zombills-reaper:reaper"
   ],
   "allowedTools": [
-    "@zombills-reaper:reaper"
+    "@zombills-reaper:reaper",
+    "@kirocrew-core/send_message"
   ]
 }

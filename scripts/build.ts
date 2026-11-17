@@ -42,6 +42,12 @@ export function skillBody(skillText: string): string {
   return rest.join("\n");
 }
 
+/**
+ * The agent's unattended-run grants (live check, task 30): `send_message` is rejected in a cron
+ * run unless it is granted here. Set at generation so the committed file always holds it.
+ */
+export const AGENT_ALLOWED_TOOLS = ["@zombills-reaper:reaper", "@kirocrew-core/send_message"];
+
 /** Builds the agent file text: the base agent with the skill text appended to its prompt. */
 export function generateAgent(baseText: string, skillText: string): string {
   // JSON.parse returns any; the fields are copied as they are and only `prompt` is checked.
@@ -54,7 +60,11 @@ export function generateAgent(baseText: string, skillText: string): string {
   if (prompt.includes(body)) {
     throw new Error("agents/reaper.base.json prompt already holds the skill text");
   }
-  const agent = { ...base, prompt: prompt + SKILL_HEADING + body };
+  const agent = {
+    ...base,
+    allowedTools: [...AGENT_ALLOWED_TOOLS],
+    prompt: prompt + SKILL_HEADING + body,
+  };
   return JSON.stringify(agent, null, 2) + "\n";
 }
 

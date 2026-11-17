@@ -134,15 +134,23 @@ describe("app.json", () => {
 describe("agents/reaper.json", () => {
   it("lists exactly the two tool groups and no model (Req 8.1, 8.4)", () => {
     expect(agent["tools"]).toEqual(["@kirocrew-core", "@zombills-reaper:reaper"]);
-    expect([
-      ["@zombills-reaper:reaper"],
-      ["@zombills-reaper:reaper", "@kirocrew-core/send_message"],
-    ]).toContainEqual(agent["allowedTools"]);
     expect(agent).not.toHaveProperty("model");
   });
 
-  // No Telegram fallback is recorded in the spike file, so the design defaults hold:
-  // the one-value allowedTools and the cron's silent: true.
+  // Live check (task 30): send_message is rejected in a cron run unless granted. Exactly these
+  // two entries; no other kirocrew-core tool (and no bare group) is auto-approved.
+  it("auto-approves exactly the Reaper server and send_message (Req 8.3)", () => {
+    expect(agent["allowedTools"]).toEqual([
+      "@zombills-reaper:reaper",
+      "@kirocrew-core/send_message",
+    ]);
+    const allowed = agent["allowedTools"] as string[];
+    expect(allowed.filter((t) => t.startsWith("@kirocrew-core"))).toEqual([
+      "@kirocrew-core/send_message",
+    ]);
+    expect(allowed).not.toContain("@kirocrew-core");
+  });
+
   it("takes tools and allowedTools from the base file", () => {
     expect(agent["tools"]).toEqual(baseAgent["tools"]);
     expect(agent["allowedTools"]).toEqual(baseAgent["allowedTools"]);
