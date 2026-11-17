@@ -2990,7 +2990,7 @@ var require_compile = __commonJS({
       const schOrFunc = root.refs[ref];
       if (schOrFunc)
         return schOrFunc;
-      let _sch = resolve2.call(this, root, ref);
+      let _sch = resolve3.call(this, root, ref);
       if (_sch === void 0) {
         const schema = (_a3 = root.localRefs) === null || _a3 === void 0 ? void 0 : _a3[ref];
         const { schemaId } = this.opts;
@@ -3017,7 +3017,7 @@ var require_compile = __commonJS({
     function sameSchemaEnv(s1, s2) {
       return s1.schema === s2.schema && s1.root === s2.root && s1.baseId === s2.baseId;
     }
-    function resolve2(root, ref) {
+    function resolve3(root, ref) {
       let sch;
       while (typeof (sch = this.refs[ref]) == "string")
         ref = sch;
@@ -3881,7 +3881,7 @@ var require_fast_uri = __commonJS({
       }
       return uri;
     }
-    function resolve2(baseURI, relativeURI, options) {
+    function resolve3(baseURI, relativeURI, options) {
       const schemelessOptions = options ? Object.assign({ scheme: "null" }, options) : { scheme: "null" };
       const {
         parsed: baseParsed,
@@ -4272,7 +4272,7 @@ var require_fast_uri = __commonJS({
     var fastUri = {
       SCHEMES,
       normalize,
-      resolve: resolve2,
+      resolve: resolve3,
       resolveComponent,
       equal,
       serialize,
@@ -17234,7 +17234,7 @@ var recursive = /* @__PURE__ */ new WeakMap();
 var NONE = 0;
 var ASSUMED = 1;
 var PROVEN = 2;
-function isRecursive(inst, stack, resolve2) {
+function isRecursive(inst, stack, resolve3) {
   const cached2 = recursive.get(inst);
   if (cached2 !== void 0)
     return cached2 ? PROVEN : NONE;
@@ -17244,7 +17244,7 @@ function isRecursive(inst, stack, resolve2) {
   let result = NONE;
   const check2 = (child) => {
     if (result !== PROVEN && child?._zod) {
-      const answer = isRecursive(child, stack, resolve2);
+      const answer = isRecursive(child, stack, resolve3);
       if (answer > result)
         result = answer;
     }
@@ -17255,7 +17255,7 @@ function isRecursive(inst, stack, resolve2) {
       const desc = Object.getOwnPropertyDescriptor(sh, key);
       if (spread && !desc.enumerable)
         continue;
-      const child = desc.get ? ASSUMED : desc.value?._zod ? isRecursive(desc.value, stack, resolve2) : NONE;
+      const child = desc.get ? ASSUMED : desc.value?._zod ? isRecursive(desc.value, stack, resolve3) : NONE;
       if (child > answer)
         answer = child;
     }
@@ -17319,7 +17319,7 @@ function isRecursive(inst, stack, resolve2) {
       break;
     // `$ZodLazy` caches its inner on the def, so a resolved edge is followed exactly
     case "lazy": {
-      const inner = def._cachedInner ?? (resolve2 ? inst._zod.innerType : void 0);
+      const inner = def._cachedInner ?? (resolve3 ? inst._zod.innerType : void 0);
       merge2(inner ? isRecursive(inner, stack, false) : ASSUMED);
       break;
     }
@@ -35757,7 +35757,7 @@ var Protocol = class {
           return;
         }
         const pollInterval = task2.pollInterval ?? this._options?.defaultTaskPollInterval ?? 1e3;
-        await new Promise((resolve2) => setTimeout(resolve2, pollInterval));
+        await new Promise((resolve3) => setTimeout(resolve3, pollInterval));
         options?.signal?.throwIfAborted();
       }
     } catch (error63) {
@@ -35774,7 +35774,7 @@ var Protocol = class {
    */
   request(request, resultSchema, options) {
     const { relatedRequestId, resumptionToken, onresumptiontoken, task, relatedTask } = options ?? {};
-    return new Promise((resolve2, reject) => {
+    return new Promise((resolve3, reject) => {
       const earlyReject = (error63) => {
         reject(error63);
       };
@@ -35852,7 +35852,7 @@ var Protocol = class {
           if (!parseResult.success) {
             reject(parseResult.error);
           } else {
-            resolve2(parseResult.data);
+            resolve3(parseResult.data);
           }
         } catch (error63) {
           reject(error63);
@@ -36114,12 +36114,12 @@ var Protocol = class {
       }
     } catch {
     }
-    return new Promise((resolve2, reject) => {
+    return new Promise((resolve3, reject) => {
       if (signal.aborted) {
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
         return;
       }
-      const timeoutId = setTimeout(resolve2, interval);
+      const timeoutId = setTimeout(resolve3, interval);
       signal.addEventListener("abort", () => {
         clearTimeout(timeoutId);
         reject(new McpError(ErrorCode.InvalidRequest, "Request cancelled"));
@@ -37259,7 +37259,7 @@ var McpServer = class {
     let task = createTaskResult.task;
     const pollInterval = task.pollInterval ?? 5e3;
     while (task.status !== "completed" && task.status !== "failed" && task.status !== "cancelled") {
-      await new Promise((resolve2) => setTimeout(resolve2, pollInterval));
+      await new Promise((resolve3) => setTimeout(resolve3, pollInterval));
       const updatedTask = await extra.taskStore.getTask(taskId);
       if (!updatedTask) {
         throw new McpError(ErrorCode.InternalError, `Task ${taskId} not found during polling`);
@@ -37923,12 +37923,12 @@ var StdioServerTransport = class {
     this.onclose?.();
   }
   send(message) {
-    return new Promise((resolve2) => {
+    return new Promise((resolve3) => {
       const json2 = serializeMessage(message);
       if (this._stdout.write(json2)) {
-        resolve2();
+        resolve3();
       } else {
-        this._stdout.once("drain", resolve2);
+        this._stdout.once("drain", resolve3);
       }
     });
   }
@@ -37969,10 +37969,47 @@ function logCounts(event, counts) {
 `);
 }
 
-// mcp/src/scan-statements.ts
-import { randomBytes } from "node:crypto";
-import { mkdir, readdir, readFile, rename, stat, writeFile } from "node:fs/promises";
-import { basename, join as join2 } from "node:path";
+// mcp/src/bury.ts
+import { mkdir, readFile, rename, writeFile } from "node:fs/promises";
+import { join as join2 } from "node:path";
+
+// shared/src/display-name.ts
+var MAX_NAME_CODE_POINTS = 80;
+var CUT_CODE_POINTS = 79;
+function collapse(text) {
+  return text.normalize("NFC").trim().replace(/\s+/gu, " ");
+}
+function displayName(text) {
+  const collapsed = collapse(text);
+  const points = [...collapsed];
+  if (points.length <= MAX_NAME_CODE_POINTS) return collapsed;
+  return points.slice(0, CUT_CODE_POINTS).join("") + "…";
+}
+function foldName(text) {
+  return collapse(text).toLowerCase();
+}
+
+// shared/src/local-date.ts
+function localDate(date5, timeZone) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit"
+  }).format(date5);
+}
+
+// shared/src/money.ts
+var CADENCE_FACTOR = { weekly: 52, monthly: 12, yearly: 1 };
+function moneyText(cents, currency) {
+  return new Intl.NumberFormat("en-US", { style: "currency", currency }).format(cents / 100);
+}
+
+// shared/src/ref.ts
+import { createHash } from "node:crypto";
+function refOf(key) {
+  return createHash("sha256").update(key, "utf8").digest("hex").slice(0, 12);
+}
 
 // vendor/zombills-core/dist/parse/parse-error.js
 var ParseError = class extends Error {
@@ -41125,30 +41162,30 @@ function planJoin(state, piece, cadence, group) {
   const step = classifyStep(l.date, g.date, l.date, 0, cadence);
   const lastInterval = state.intervals[state.intervals.length - 1];
   const afterLate = lastInterval !== void 0 && lastInterval.kind === "late";
-  let join3 = null;
+  let join4 = null;
   let firstOut = null;
   if (step.k1 !== null) {
-    join3 = { k: 1, kind: "on-schedule", deviation: step.k1 };
+    join4 = { k: 1, kind: "on-schedule", deviation: step.k1 };
   } else if (!bothSingle && !afterLate && step.k2 !== null) {
-    join3 = { k: 2, kind: "on-schedule", deviation: step.k2 };
+    join4 = { k: 2, kind: "on-schedule", deviation: step.k2 };
   } else if (afterLate && !bothSingle) {
     const before = state.charges[state.charges.length - 2];
     const fromBefore = classifyStep(before.date, g.date, before.date, 0, cadence).k2;
     if (fromBefore !== null)
-      join3 = { k: 1, kind: "on-schedule", deviation: fromBefore };
+      join4 = { k: 1, kind: "on-schedule", deviation: fromBefore };
   }
-  if (join3 === null && cadence === "monthly" && !bothSingle && !afterLate && step.late !== null) {
+  if (join4 === null && cadence === "monthly" && !bothSingle && !afterLate && step.late !== null) {
     const out = lateOut(piece, l);
     if (out === "refuse")
       return null;
-    join3 = { k: 1, kind: "late", deviation: step.late };
+    join4 = { k: 1, kind: "late", deviation: step.late };
     firstOut = out;
   }
-  if (join3 === null)
+  if (join4 === null)
     return null;
   let ones = state.ones + piece.ones;
   let twos = state.twos + piece.twos;
-  if (join3.k === 1)
+  if (join4.k === 1)
     ones++;
   else
     twos++;
@@ -41164,7 +41201,7 @@ function planJoin(state, piece, cadence, group) {
   }
   if (ones < 1 || twos > ones)
     return null;
-  return { cadence, join: join3, firstOut };
+  return { cadence, join: join4, firstOut };
 }
 function beats(a, b, p) {
   const dayA = a.first.date.day;
@@ -41767,7 +41804,7 @@ function detectSubscriptions(transactions, options) {
 }
 
 // vendor/zombills-core/dist/classify/band.js
-var CADENCE_FACTOR = Object.freeze({
+var CADENCE_FACTOR2 = Object.freeze({
   weekly: 52,
   monthly: 12,
   yearly: 1
@@ -41824,7 +41861,7 @@ function findPriceRise(subscription, paid) {
   if (!isBandRise(first.amountCents, current))
     return null;
   const increasePerChargeCents = current - first.amountCents;
-  const increasePerYearCents = increasePerChargeCents * CADENCE_FACTOR[subscription.cadence];
+  const increasePerYearCents = increasePerChargeCents * CADENCE_FACTOR2[subscription.cadence];
   if (!Number.isSafeInteger(increasePerYearCents))
     return null;
   let latestRise = null;
@@ -42760,6 +42797,96 @@ var EMAIL_ONLY_SERVICE_IDS = Object.freeze([
   })
 ]);
 
+// vendor/zombills-core/dist/cancel/clean-text.js
+function toWellFormedText(s) {
+  let out = "";
+  let i = 0;
+  while (i < s.length) {
+    const c = s.charCodeAt(i);
+    if (c >= 55296 && c <= 56319 && i + 1 < s.length) {
+      const next = s.charCodeAt(i + 1);
+      if (next >= 56320 && next <= 57343) {
+        out += s.slice(i, i + 2);
+        i += 2;
+        continue;
+      }
+    }
+    if (c >= 55296 && c <= 57343) {
+      out += "�";
+    } else {
+      out += s.charAt(i);
+    }
+    i += 1;
+  }
+  return out;
+}
+var SEPARATORS = /[\s\p{Cc}\p{Cf}\u2028\u2029]+/gu;
+var MAX_CODE_POINTS = 80;
+function cleanField(value) {
+  const s = typeof value === "string" ? value : "";
+  const folded = toWellFormedText(s).replace(SEPARATORS, " ").trim();
+  return Array.from(folded).slice(0, MAX_CODE_POINTS).join("").trim();
+}
+
+// vendor/zombills-core/dist/cancel/email.js
+var CURRENCY_CODE2 = /^[A-Z]{3}$/;
+function periodWord(cadence) {
+  switch (cadence) {
+    case "weekly":
+      return "week";
+    case "monthly":
+      return "month";
+    case "yearly":
+      return "year";
+    default:
+      return null;
+  }
+}
+function asRecord(value) {
+  return typeof value === "object" && value !== null ? value : {};
+}
+function cancellationEmail(input2) {
+  const i = asRecord(input2);
+  const name = cleanField(i["serviceName"]);
+  const amount = cleanField(i["amountText"]);
+  const rawCurrency = i["currency"];
+  const currency = typeof rawCurrency === "string" && CURRENCY_CODE2.test(rawCurrency) ? rawCurrency : null;
+  const what = name === "" ? "my subscription" : "my " + name + " subscription";
+  const money = currency === null ? amount : amount + " (" + currency + ")";
+  const period = periodWord(i["cadence"]);
+  let amountLine;
+  if (amount === "") {
+    amountLine = null;
+  } else if (i["cadenceAssumed"] === false && period !== null) {
+    amountLine = "I am currently charged " + money + " every " + period + ".";
+  } else {
+    amountLine = "My most recent charge was " + money + ".";
+  }
+  const lines = [
+    "Hello,",
+    "",
+    "Please cancel " + what + " and stop all future payments.",
+    "",
+    "Name on the account: [Your name]",
+    "Account email: [Your account email]",
+    "",
+    ...amountLine === null ? [] : [amountLine, ""],
+    "Please confirm in writing that the subscription is cancelled, the date it ends, and that no further payments will be taken.",
+    "",
+    "Thank you,",
+    "[Your name]"
+  ];
+  return { subject: "Please cancel " + what, body: lines.join("\n") };
+}
+function mailtoHref(email3) {
+  const e = asRecord(email3);
+  const rawSubject = e["subject"];
+  const rawBody = e["body"];
+  const subject = toWellFormedText(typeof rawSubject === "string" ? rawSubject : "");
+  const body = toWellFormedText(typeof rawBody === "string" ? rawBody : "").replaceAll("\n", "\r\n");
+  return "mailto:?subject=" + encodeURIComponent(subject) + "&body=" + encodeURIComponent(body);
+}
+
 // vendor/zombills-core/dist/cancel/url-parts.js
 function parseUrl(text) {
   if (typeof text !== "string")
@@ -42810,26 +42937,125 @@ function lookupIn(entries) {
 }
 var getCancelHelp = lookupIn(CANCEL_ENTRIES);
 
-// shared/src/display-name.ts
-var MAX_NAME_CODE_POINTS = 80;
-var CUT_CODE_POINTS = 79;
-function collapse(text) {
-  return text.normalize("NFC").trim().replace(/\s+/gu, " ");
-}
-function displayName(text) {
-  const collapsed = collapse(text);
-  const points = [...collapsed];
-  if (points.length <= MAX_NAME_CODE_POINTS) return collapsed;
-  return points.slice(0, CUT_CODE_POINTS).join("") + "…";
+// mcp/src/cancel-draft.ts
+function cancelDraft(t) {
+  const help2 = getCancelHelp(t.serviceId, t.currency);
+  if (help2.kind === "link") {
+    return {
+      kind: "link",
+      url: help2.url,
+      host: help2.host,
+      steps: [...help2.steps],
+      appStoreMayApply: help2.appStoreMayApply
+    };
+  }
+  const email3 = cancellationEmail({
+    serviceName: t.name,
+    amountText: moneyText(t.amountCents, t.currency),
+    currency: t.currency,
+    cadence: t.cadence,
+    cadenceAssumed: t.cadenceAssumed
+  });
+  return { kind: "email", subject: email3.subject, body: email3.body, mailto: mailtoHref(email3) };
 }
 
-// shared/src/ref.ts
-import { createHash } from "node:crypto";
-function refOf(key) {
-  return createHash("sha256").update(key, "utf8").digest("hex").slice(0, 12);
+// mcp/src/bury.ts
+function isHistory(value) {
+  return typeof value === "object" && value !== null && "version" in value && value.version === 1 && "trackedCharges" in value && Array.isArray(value.trackedCharges) && "tombstones" in value && Array.isArray(value.tombstones) && "scans" in value && Array.isArray(value.scans);
+}
+async function readHistory(path) {
+  try {
+    const parsed = JSON.parse(await readFile(path, "utf8"));
+    return isHistory(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+function viewOf(t) {
+  return {
+    ref: refOf(t.key),
+    name: t.name,
+    serviceId: t.serviceId,
+    currency: t.currency,
+    cadence: t.cadence,
+    amountCents: t.amountCents,
+    cadenceAssumed: t.cadenceAssumed,
+    yearlySavingCents: t.yearlySavingCents,
+    buriedAt: t.buriedAt,
+    risenReportedThrough: t.risenReportedThrough
+  };
+}
+function candidateOf(c) {
+  return {
+    name: c.merchant,
+    amountText: moneyText(c.amountCents, c.currency),
+    cadence: c.cadence
+  };
+}
+function resolve2(text, charges) {
+  const q = foldName(text);
+  if (q === "") return [];
+  const byServiceId = charges.filter((c) => c.serviceId !== null && foldName(c.serviceId) === q);
+  if (byServiceId.length > 0) return byServiceId;
+  return charges.filter((c) => foldName(c.merchant) === q);
+}
+async function bury(context, args) {
+  const historyPath = join2(context.dataDir, "history.json");
+  const history = await readHistory(historyPath);
+  const lastScan = history?.scans[history.scans.length - 1];
+  if (history === null || lastScan === void 0) return { ok: false, reason: "no-scan" };
+  const current = history.trackedCharges.filter((c) => c.lastSeenScan === lastScan.scanId);
+  const hits = resolve2(args.service, current);
+  if (hits.length === 0) {
+    logCounts("bury", { found: 0, already: 0 });
+    return { ok: false, reason: "not-found", candidates: [] };
+  }
+  const [t] = hits;
+  if (t === void 0 || hits.length > 1) {
+    logCounts("bury", { found: hits.length, already: 0 });
+    return { ok: false, reason: "ambiguous", candidates: hits.slice(0, 5).map(candidateOf) };
+  }
+  const existing = history.tombstones.find((tomb) => tomb.key === t.key);
+  if (existing !== void 0) {
+    logCounts("bury", { found: 1, already: 1 });
+    return {
+      ok: true,
+      tombstone: viewOf(existing),
+      cancel: cancelDraft(existing),
+      alreadyBuried: true
+    };
+  }
+  const tombstone = {
+    key: t.key,
+    name: t.merchant,
+    serviceId: t.serviceId,
+    currency: t.currency,
+    cadence: t.cadence,
+    merchantKey: t.merchantKey,
+    amountCents: t.amountCents,
+    cadenceAssumed: t.cadenceAssumed,
+    yearlySavingCents: t.cadenceAssumed ? null : t.amountCents * CADENCE_FACTOR[t.cadence],
+    buriedAt: localDate(context.now(), context.timeZone),
+    risenReportedThrough: null
+  };
+  const next = { ...history, tombstones: [...history.tombstones, tombstone] };
+  await mkdir(context.dataDir, { recursive: true, mode: 448 });
+  const tmpPath = `${historyPath}.tmp-${process.pid}`;
+  await writeFile(tmpPath, JSON.stringify(next), { mode: 384 });
+  await rename(tmpPath, historyPath);
+  logCounts("bury", { found: 1, already: 0 });
+  return {
+    ok: true,
+    tombstone: viewOf(tombstone),
+    cancel: cancelDraft(tombstone),
+    alreadyBuried: false
+  };
 }
 
 // mcp/src/scan-statements.ts
+import { randomBytes } from "node:crypto";
+import { mkdir as mkdir2, readdir, readFile as readFile2, rename as rename2, stat, writeFile as writeFile2 } from "node:fs/promises";
+import { basename, join as join3 } from "node:path";
 var MAX_FILES = 120;
 var STATEMENT_NAME = /\.csv$/i;
 function compareCodeUnits(a, b) {
@@ -42841,7 +43067,7 @@ function isPlainObject4(value) {
 async function readStatementsFolder(dataDir) {
   let text;
   try {
-    text = await readFile(join2(dataDir, "settings.json"), "utf8");
+    text = await readFile2(join3(dataDir, "settings.json"), "utf8");
   } catch {
     return null;
   }
@@ -42900,7 +43126,7 @@ function scanIdOf(now) {
 }
 async function readExisting(path) {
   try {
-    const parsed = JSON.parse(await readFile(path, "utf8"));
+    const parsed = JSON.parse(await readFile2(path, "utf8"));
     if (!isPlainObject4(parsed)) return { tombstones: [], scans: [] };
     const tombstones = parsed["tombstones"];
     const scans = parsed["scans"];
@@ -42927,7 +43153,7 @@ async function scanStatements(context) {
   const transactions = [];
   let read = 0;
   for (const name of names) {
-    const result = parseStatement(decodeUtf8(await readFile(join2(folder, name))));
+    const result = parseStatement(decodeUtf8(await readFile2(join3(folder, name))));
     if (result.status === "mapped") {
       read += 1;
       transactions.push(...normalizeTransactions(result.transactions));
@@ -42961,7 +43187,7 @@ async function scanStatements(context) {
     lastSeenScan: scanId,
     reportedRiseDate: s.priceRise?.latestRise?.date ?? null
   }));
-  const historyPath = join2(context.dataDir, "history.json");
+  const historyPath = join3(context.dataDir, "history.json");
   const existing = await readExisting(historyPath);
   const record2 = {
     scanId,
@@ -42980,10 +43206,10 @@ async function scanStatements(context) {
     scans: [...existing.scans, record2],
     reportedTrials: []
   };
-  await mkdir(context.dataDir, { recursive: true, mode: 448 });
+  await mkdir2(context.dataDir, { recursive: true, mode: 448 });
   const tmpPath = `${historyPath}.tmp-${process.pid}`;
-  await writeFile(tmpPath, JSON.stringify(history), { mode: 384 });
-  await rename(tmpPath, historyPath);
+  await writeFile2(tmpPath, JSON.stringify(history), { mode: 384 });
+  await rename2(tmpPath, historyPath);
   const skippedTotal = Object.values(skipped).reduce((sum, n) => sum + n, 0);
   logCounts("scan", {
     read,
@@ -43011,6 +43237,7 @@ async function scanStatements(context) {
 }
 
 // mcp/src/tools.ts
+var BURY_DESCRIPTION = "Records that the user chose to cancel one current recurring charge and returns a cancel link or a cancellation email draft. The service text is a name as the user wrote it, optionally followed by an amount such as 16.99. Drafts only; never cancels, logs in or sends.";
 var SCAN_DESCRIPTION = "Reads the CSV statements in the user's statements folder in place, finds recurring charges with Zombills core and compares them with earlier scans. Returns a summary only: new undead, possessed charges, trial traps, charges that rose after burial, all current undead and yearly totals. Never returns transactions.";
 function guarded(tool, handler) {
   return async (args) => {
@@ -43033,6 +43260,12 @@ function createReaperTools(context) {
     description: SCAN_DESCRIPTION,
     inputSchema: external_exports.object({}).strict(),
     handler: guarded("scan_statements", () => scanStatements(context))
+  });
+  const buryInput = external_exports.object({ service: external_exports.string().min(1).max(400) }).strict();
+  tools2.set("bury", {
+    description: BURY_DESCRIPTION,
+    inputSchema: buryInput,
+    handler: guarded("bury", (args) => bury(context, buryInput.parse(args)))
   });
   return tools2;
 }

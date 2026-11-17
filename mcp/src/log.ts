@@ -3,7 +3,7 @@ import type { Reason } from "../../shared/src/types.ts";
 export type LogEvent = "scan" | "bury" | "unbury" | "set-folder" | "tool-error" | "lock-takeover";
 
 /** Tool names a log line may carry. Later tasks add their names here. */
-export type ToolName = "scan_statements";
+export type ToolName = "scan_statements" | "bury";
 
 /** Error names a log line may carry. Anything else is logged as "Error". */
 export type ErrorName = "Error" | "TypeError" | "RangeError" | "SyntaxError" | "SystemError";
