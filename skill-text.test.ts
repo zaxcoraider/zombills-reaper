@@ -155,7 +155,10 @@ describe("skills/reaper/SKILL.md", () => {
     expect(bury).toContain("`bury <name> <amount>`");
     expect(bury).toContain("`no-scan`");
     expect(bury).toContain("at most 3 steps");
-    expect(bury).toContain("The App Store may handle this one.");
+    expect(bury).toContain(
+      "If you pay for it through the App Store or Google Play, cancel it there instead.",
+    );
+    expect(bury).not.toContain("The App Store may handle this one.");
     expect(bury).toContain("mailto");
     expect(bury).toContain("Never guess");
     expect(sectionText(8)).toContain("`<name> is out of the graveyard.`");

@@ -12,6 +12,7 @@
     "typecheck": "tsc --noEmit",
     "lint": "eslint . && prettier --check .",
     "build": "node scripts/build.ts",
+    "setup:telegram": "node scripts/setup-telegram-agent.ts",
     "format": "prettier --write ."
   },
   "devDependencies": {

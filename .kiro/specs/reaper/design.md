@@ -67,7 +67,7 @@ Delivery to Telegram and inbound "bury" from Telegram are **not tested yet** (sp
 ```mermaid
 flowchart TD
     CRON["Crew cron zombills-reaper/Graveyard watch<br/>0 9 1 * *, silent, strict_schedule"] -- "fixed prompt" --> AGENT
-    TG["Telegram DM<br/>(/agent reaper, untested)"] -- "bury / unbury / graveyard" --> AGENT
+    TG["Telegram DM<br/>(npm run setup:telegram, then /agent → reaper-chat)"] -- "bury / unbury / graveyard" --> AGENT
     DCHAT["Crew dashboard chat"] -- "set folder, scan, bury" --> AGENT
     AGENT["Reaper agent<br/>agents/reaper.json + skills/reaper/SKILL.md"] -- "MCP stdio<br/>@zombills-reaper:reaper" --> MCP
     AGENT -- "send_message (Delivery section only)" --> CREWTG["Crew → Telegram owner DM"]
@@ -750,7 +750,7 @@ Everything that depends on the untested Telegram behaviour sits in four places. 
 | --- | --- | --- |
 | Skill section 4 "Delivery" (in `SKILL.md`, copied into the agent prompt by the build) | `send_message` call and its arguments | `session: "telegram"` → `channel_type: "telegram"` (both are `send_message` fields in `validation_parts/messaging_session_schemas.py`); or the section becomes "do not send; your reply is delivered" |
 | Cron `silent` and the agent's `allowedTools` | Whether Crew or the agent delivers; approval of `send_message` | If T2 fails: add `"@kirocrew-core/send_message"` to `allowedTools`. If T1 fails with both argument forms: set `silent: false`, the user pins the job's channel to Telegram in the dashboard (`CronJob.channel`), and the Delivery section says "reply only". The cost is that a quiet month then posts "All quiet in the graveyard this month." to Telegram |
-| README "Telegram" section | Bot setup in Settings → Messaging Channels and `/agent reaper` in the bot chat | Fallback: "bury" in the Reaper's dashboard chat tab |
+| README "Telegram" section | Bot setup in Settings → Messaging Channels, then `npm run setup:telegram` and `/agent` → `reaper-chat` in the bot chat (Amended by final live check 2026-11-17: Crew hides app agents from the Telegram picker; see `spike-2026-11-17.md`, "Final check") | Fallback: "bury" in the Reaper's dashboard chat tab |
 | Skill section 3, the alert's last line | `Reply "bury <name>" and I will draft the cancellation.` | If T4 fails: `Reply "bury <name>" in the Reaper's dashboard chat and I will draft the cancellation.` (`skill-text.test.ts` accepts either line) |
 
 No code in `mcp/`, `backend/` or `ui/` knows about Telegram.
@@ -764,7 +764,7 @@ With the skeleton installed and a bot connected in Settings → Messaging Channe
 | T1 | `send_message` with `session: "telegram"` from a `silent: true` cron run reaches the owner's Telegram DM | `kirocrew cron trigger`; check the DM and `cron-history/<id>.jsonl` |
 | T2 | `send_message` is not rejected for approval in the unattended run with `allowedTools: ["@zombills-reaper:reaper"]`; if it is, `"@kirocrew-core/send_message"` in `allowedTools` fixes it | Same run; gateway.log |
 | T3 | The text arrives as sent: the emoji, `$` amounts, line breaks, a `mailto:` link and a code block; and a 1,500-character message is not cut | Send a fixed sample alert and a bury draft |
-| T4 | `/agent reaper` in the bot chat routes later messages to the Reaper agent, and it sticks across messages and a gateway restart | Send "graveyard", restart, send again |
+| T4 | After `npm run setup:telegram`, `/agent` in the bot chat lists `reaper-chat`; picking it routes later messages to the Reaper agent, and it sticks across messages and a gateway restart. (Amended by final live check 2026-11-17: `/agent reaper` does not work because Crew hides app agents from the Telegram picker; `spike-2026-11-17.md`, "Final check") | Send "graveyard", restart, send again |
 | T5 | In that chat, "bury Netflix" runs the `bury` tool without an approval prompt the user cannot answer, or with one Telegram can answer | Demo data, round 2 |
 | T6 | What the user loses in that Telegram chat while it is routed to the Reaper (other agents, Crew commands) and how to switch back (`/agent` with no argument or another name) | Note for the README |
 | T7 | The silent run still shows the agent's reply in the cron's dashboard tab, and a quiet month sends nothing to Telegram | Trigger with no new files |
@@ -1046,7 +1046,7 @@ Made in the same change as the code, each citing its source:
 - `privacy.md`: `X-Crew-Proxy` → `X-KiroCrew-Proxy-V2` with `X-KiroCrew-Proxy-Nonce`; the statements path lives in `data/settings.json`; built-in `read`, `glob`, `grep` (pending T8); a path set through the agent reaches the model provider; alert text stored in `~/.kiro/crew/cron-history`; and two transcript stores on disk that hold every Scan summary, every bury draft and any path passed to `set_statements_folder`: kiro-cli's `<kiro home>/sessions/cli/<sid>.jsonl` (`kiro_crew/config/paths.py:1268`, `kiro_sessions_dir`) and Crew's own `data_home()/sessions` (`history_files.py:27`, `session_digest.py:58`). They stay on the machine, but they are outside the Data dir and the Reaper does not manage them, so "summaries only" limits what reaches them, not whether they exist.
 - README privacy text: names the same two transcript stores and `cron-history` as a limit of "summaries only" (design review 1 #5). README install steps: before `kirocrew app install <repo path>`, check that `<repo>/data` does not exist and move it out of the repo if it does, because a first install copies the source's own `data/` into the installed app (`apps/manager_install.py:385`) and a dev `data/settings.json` would ship with it (design review 1 #15).
 - `structure.md`: the five MCP tools; the `shared/` folder; tests at the root for the manifest and skill text.
-- `product.md`: the statements path in the Settings file; "bury" routing via `/agent reaper` pending T4.
+- `product.md`: the statements path in the Settings file; "bury" routing via `npm run setup:telegram`, then `/agent` → `reaper-chat`, pending T4 (Amended by final live check 2026-11-17: Crew hides app agents from the Telegram picker, so `/agent reaper` does not work; see `spike-2026-11-17.md`, "Final check").
 
 ## Task order (walking skeleton first)
 

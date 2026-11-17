@@ -71,7 +71,7 @@ Call `bury` with the user's text after "bury".
 On `ok`:
 
 - Tombstone line: `⚰ <name> is buried. You save <yearly> a year.` When the cadence is a guess, write `⚰ <name> is buried. Its yearly saving is not counted because its cadence is a guess.`
-- For a link: give the URL and at most 3 steps. When `appStoreMayApply` is true, add "The App Store may handle this one."
+- For a link: give the URL and at most 3 steps. When `appStoreMayApply` is true, add the line "If you pay for it through the App Store or Google Play, cancel it there instead."
 - For an email: give the subject, the body in a code block, and the `mailto` link.
 - Always end with "You still need to cancel with the service; I only draft it."
 

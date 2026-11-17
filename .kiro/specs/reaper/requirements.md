@@ -63,7 +63,9 @@ The Crew docs summarised in Zombills `architecture.md` ("Kiro Crew findings") le
 - **Alert delivery.** The cron is `silent: true`, and the agent sends alerts itself with `send_message` to `telegram`. A month with nothing new sends no chat message, so the channel is never filled with "all quiet" posts. The one exception is a data-free "no statements folder yet" message (Requirement 9.6). The run still shows in the cron's dashboard tab.
 - **Inbound "bury".** Telegram messages reach the agent the user's Crew routes that channel to. The README tells the user to route their Telegram DM to the Reaper agent. How that setting is named in Crew is checked during design; if routing is not possible, the fallback is that the user sends "bury" in the Reaper's dashboard chat tab.
 
-> **Amended by spike 2026-11-17** (`spike-2026-11-17.md`): the routing mechanism is Telegram's `/agent` picker (`/agent reaper`). It is **not tested yet** (spike Q7). Design isolates it and lists what the Telegram test must confirm; the dashboard chat fallback stays.
+> **Amended by spike 2026-11-17** (`spike-2026-11-17.md`): the routing mechanism is Telegram's `/agent` picker. It is **not tested yet** (spike Q7). Design isolates it and lists what the Telegram test must confirm; the dashboard chat fallback stays.
+
+> **(Amended by final live check 2026-11-17)** (`spike-2026-11-17.md`, "Final check"): Crew hides app agents from the Telegram `/agent` picker, so `/agent reaper` does not work. The user runs `npm run setup:telegram`, then sends `/agent` and picks `reaper-chat`. The dashboard chat fallback stays.
 
 ### Scope budget
 
@@ -415,6 +417,8 @@ Check these on the local Crew 0.12.2 before writing `design.md`:
 1. `README.md` SHALL explain what the Reaper does, the privacy promise in three sentences, and install steps for the local Mac: install Crew 0.12.2, install from local path (`POST http://localhost:5476/api/apps/install {"source": "<path>"}` then enable, or App Store → Install from local path; the committed bundles need no build, and `npm ci && npm run build` is needed only after changing source), connect Telegram in the Crew Gateway, route the Telegram DM to the Reaper agent (Introduction, "Decisions"), set Crew's timezone, and tell the Reaper agent which folder to watch or edit `settings.json` (Requirement 3.6). It SHALL say to keep earlier statements in the folder, because detection needs repeated charges, and that the same charge on two accounts on the same day is counted once (Requirement 4.4). It SHALL state the agent's real tool surface and the limit of Requirement 8.3.
 
    > **Amended by spike 2026-11-17** (`spike-2026-11-17.md`): install is `kirocrew app install <repo path>`; the CLI refuses to enable a third-party app, so the README SHALL tell the user to enable it in the dashboard (Apps → Library → The Reaper → Enable) and SHALL NOT suggest setting `agent.apps_allow_third_party`. After a source change: `kirocrew app update zombills-reaper`. Telegram routing is `/agent reaper` in the bot chat, pending the Telegram test.
+
+   > **(Amended by final live check 2026-11-17)** (`spike-2026-11-17.md`, "Final check"): Crew hides app agents from the Telegram picker, so the README SHALL NOT tell the user to send `/agent reaper`. It SHALL tell them to run `npm run setup:telegram`, then send `/agent` and pick `reaper-chat`.
 
    > **Amended by design review 1 #15** (`review-design-1.md`): the install step SHALL tell the user to check that `<repo>/data` does not exist before installing, because a first install copies the source's `data/` into the installed app (`apps/manager_install.py:385`). Amended by design review 1 #5: the privacy text names the transcript stores of Requirement 15.3.
 

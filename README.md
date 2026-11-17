@@ -25,14 +25,23 @@ Limits of that promise:
 
 The three bundles (`mcp/dist/server.js`, `backend/dist/server.js`, `ui/dist/index.mjs`) are committed and need no build. After you change source, run `npm ci && npm run build`, then `kirocrew app update zombills-reaper`. If you ever rename the cron in `app.json`, `kirocrew app update` adds the new job and keeps the old one, so remove the old one with `kirocrew cron remove <id>`.
 
+## Talk to the Reaper on Telegram
+
+Crew hides app-installed agents from Telegram's `/agent` picker, so the Reaper needs a user-level copy named `reaper-chat`.
+
+1. In the Crew dashboard open Settings → Messaging Channels and connect your Telegram bot. The bot token lives in Crew only, never in this repo. Set the allowed user ID to your own, which you can get from @userinfobot. The dashboard save may not keep the ID. If it does not, run `kirocrew config set telegram.allowed_user_ids '[<id>]'` and then `kirocrew restart`.
+2. Run `npm run setup:telegram`. It reads `~/.kiro/agents/zombills-reaper--reaper.json` and writes `~/.kiro/agents/reaper-chat.json` (mode 0600) with the same prompt, tools and MCP servers. It refuses to overwrite a `reaper-chat.json` it did not create unless you add `-- --force`.
+3. In Telegram send `/agent` and pick `reaper-chat`. Then send `bury <service>`, for example `bury Netflix`.
+4. Run `npm run setup:telegram` again after every `kirocrew app update zombills-reaper`, so the copy follows the installed agent.
+
 ## Telegram
 
 1. In the Crew dashboard open Settings → Messaging Channels and connect your Telegram bot. The bot token lives in Crew only, never in this repo.
-2. In the chat with your bot, send `/agent reaper`. Later messages in that chat go to the Reaper agent, so "bury Netflix" works there. (Not yet tested on Telegram.)
-3. While the chat is routed to the Reaper, you talk to the Reaper and not to Crew's default agent. To switch back, send `/agent` with no name or with another agent's name. (Not yet tested on Telegram.)
+2. In the chat with your bot, send `/agent` and pick `reaper-chat` (see "Talk to the Reaper on Telegram"). Later messages in that chat go to the Reaper agent, so "bury Netflix" works there. Plain `/agent reaper` does not work, because Crew hides the app's own agent.
+3. While the chat is routed to the Reaper, you talk to the Reaper and not to Crew's default agent. To switch back, send `/agent` and pick another agent.
 4. If routing does not work for you, use the Reaper agent's chat in the Crew dashboard instead. It understands the same commands.
 
-The agent's tool surface is `send_message` from `@kirocrew-core` and the five Reaper tools: `scan_statements`, `list_graveyard`, `bury`, `unbury` and `set_statements_folder`. Crew also mounts `read`, `glob` and `grep` (see "Privacy"). (Not yet tested on Telegram.)
+The agent's tool surface is `send_message` from `@kirocrew-core` and the five Reaper tools: `scan_statements`, `list_graveyard`, `bury`, `unbury` and `set_statements_folder`. Crew also mounts `read`, `glob` and `grep` (see "Privacy").
 
 ## The statements folder
 
