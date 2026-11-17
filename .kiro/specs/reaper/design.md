@@ -51,7 +51,7 @@ Delivery to Telegram and inbound "bury" from Telegram are **not tested yet** (sp
 | 1 | `kirocrew app install <dir>` copies the tree; the CLI refuses to enable a third-party app, the user enables it in the dashboard (Apps → Library → The Reaper → Enable). `kirocrew app update zombills-reaper` re-copies | README install steps; never set `agent.apps_allow_third_party` |
 | 2 | `/bin/sh -c "exec node \"$HOME/…\""` works; `${HOME}` in `args` does not | Manifest, `app-manifest.test.ts` |
 | 3 | In the sandboxed cron session the server can read `~/Documents` and write `<App root>/data`; cwd is a per-run workspace | `app-paths.ts` ignores cwd |
-| 4 | `"agent": "reaper"` (bare) works; the cron is `zombills-reaper/monthly-scan`; the agent file is `~/.kiro/agents/zombills-reaper--reaper.json` | Cron entry, README "Run it now" |
+| 4 | `"agent": "reaper"` (bare) works; the cron is `zombills-reaper/Graveyard watch`; the agent file is `~/.kiro/agents/zombills-reaper--reaper.json` | Cron entry, README "Run it now" |
 | 5 | Tools must be `@zombills-reaper:reaper`; Crew adds `managedToolPolicy.exclude` with most Crew tools. Whether `read`, `glob`, `grep` are mounted was not listed | Agent file; Telegram test T8 records the real surface for the README (Req 8.3) |
 | 5b | `allowedTools` needed for unattended runs; `autoApprove` breaks mounting | Agent file; Telegram test T2 for `send_message` |
 | 6, 7 | Telegram delivery and inbound routing not tested | "Telegram isolation", "Telegram test" |
@@ -66,7 +66,7 @@ Delivery to Telegram and inbound "bury" from Telegram are **not tested yet** (sp
 
 ```mermaid
 flowchart TD
-    CRON["Crew cron zombills-reaper/monthly-scan<br/>0 9 1 * *, silent, strict_schedule"] -- "fixed prompt" --> AGENT
+    CRON["Crew cron zombills-reaper/Graveyard watch<br/>0 9 1 * *, silent, strict_schedule"] -- "fixed prompt" --> AGENT
     TG["Telegram DM<br/>(/agent reaper, untested)"] -- "bury / unbury / graveyard" --> AGENT
     DCHAT["Crew dashboard chat"] -- "set folder, scan, bury" --> AGENT
     AGENT["Reaper agent<br/>agents/reaper.json + skills/reaper/SKILL.md"] -- "MCP stdio<br/>@zombills-reaper:reaper" --> MCP
@@ -622,7 +622,7 @@ The backend calls the same function. Its `timeZone` is `Intl.DateTimeFormat().re
   },
   "crons": [
     {
-      "name": "monthly-scan",
+      "name": "Graveyard watch",
       "cron_expr": "0 9 1 * *",
       "agent": "reaper",
       "message": "Run the monthly round of the reaper skill.",
@@ -740,7 +740,7 @@ Sections, in this order:
 
 One entry (manifest above). `agent: "reaper"` (bare; spike Q4). `strict_schedule: true` removes the random start delay; no `timezone`, so Crew's zone applies, then UTC. The message holds no path, name or amount (Req 10.2).
 
-"Run it now" (README, Req 10.3): `kirocrew cron list` → the id of `zombills-reaper/monthly-scan` → `kirocrew cron trigger <id>`. The run takes about 8 to 40 s (spike Q11). Results: the cron's dashboard tab, or `~/.kiro/crew/cron-history/<id>.jsonl`. Sending "scan my statements" to the Reaper agent in the dashboard chat runs the same scan, without the Delivery step.
+"Run it now" (README, Req 10.3): `kirocrew cron list` → the id of `zombills-reaper/Graveyard watch` → `kirocrew cron trigger <id>`. The run takes about 8 to 40 s (spike Q11). Results: the cron's dashboard tab, or `~/.kiro/crew/cron-history/<id>.jsonl`. Sending "scan my statements" to the Reaper agent in the dashboard chat runs the same scan, without the Delivery step.
 
 ## Telegram isolation
 

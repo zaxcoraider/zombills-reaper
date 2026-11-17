@@ -341,12 +341,12 @@ Check these on the local Crew 0.12.2 before writing `design.md`:
 
 #### Acceptance Criteria
 
-1. `app.json` `crons[]` SHALL hold one entry `{ name: "monthly-scan", cron_expr: "0 9 1 * *", agent: "reaper", message, silent: true, strict_schedule: true, persistent_session: false, enabled: true }` with no `timezone`, so it fires at 09:00 on the 1st in the zone set in Crew (then UTC), with no random start delay and no context carried between months. The `agent` value SHALL be the name Crew resolves to this app's agent; the 0.12.2 source registers app agents as `zombills-reaper/reaper` (`apps/bridges_agents.py`) and passes the cron's `agent` through unchanged (`apps/bridges_crons.py`), so design SHALL confirm on a real install whether the bare or the namespaced name works.
+1. `app.json` `crons[]` SHALL hold one entry `{ name: "Graveyard watch", cron_expr: "0 9 1 * *", agent: "reaper", message, silent: true, strict_schedule: true, persistent_session: false, enabled: true }` with no `timezone`, so it fires at 09:00 on the 1st in the zone set in Crew (then UTC), with no random start delay and no context carried between months. The `agent` value SHALL be the name Crew resolves to this app's agent; the 0.12.2 source registers app agents as `zombills-reaper/reaper` (`apps/bridges_agents.py`) and passes the cron's `agent` through unchanged (`apps/bridges_crons.py`), so design SHALL confirm on a real install whether the bare or the namespaced name works. (Amended 2026-11-17: user chose the name Graveyard watch for the phone footer)
 
-   > **Amended by spike 2026-11-17** (`spike-2026-11-17.md`): the bare name `reaper` works: the manifest `"agent": "spike"` became cron `agent_id: "spike"` and ran with that agent. The cron is named `zombills-reaper/monthly-scan`.
+   > **Amended by spike 2026-11-17** (`spike-2026-11-17.md`): the bare name `reaper` works: the manifest `"agent": "spike"` became cron `agent_id: "spike"` and ran with that agent. The cron is named `zombills-reaper/Graveyard watch`.
 
 2. `message` SHALL ask the agent to run the monthly round of the `reaper` skill. It SHALL hold no path, name or amount.
-3. THE README SHALL document running it now: `kirocrew cron list` to find the id of `zombills-reaper/monthly-scan`, then `kirocrew cron trigger <id>`; and, as an alternative, sending "scan my statements" to the Reaper agent, which runs the same flow.
+3. THE README SHALL document running it now: `kirocrew cron list` to find the id of `zombills-reaper/Graveyard watch`, then `kirocrew cron trigger <id>`; and, as an alternative, sending "scan my statements" to the Reaper agent, which runs the same flow.
 4. A unit test SHALL check Criteria 1 and 2 against `app.json`.
 
 ### Requirement 11: The dashboard backend (Should)

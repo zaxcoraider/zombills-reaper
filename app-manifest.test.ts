@@ -115,7 +115,7 @@ describe("app.json", () => {
     expect(crons).toHaveLength(1);
     const cron = crons[0] as Json;
     expect(cron).toEqual({
-      name: "monthly-scan",
+      name: "Graveyard watch",
       cron_expr: "0 9 1 * *",
       agent: "reaper",
       message: "Run the monthly round of the reaper skill.",
