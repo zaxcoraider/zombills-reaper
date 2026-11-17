@@ -250,7 +250,7 @@ export interface StatementFile {
 export interface StatementSet {
   /** Files in a random order, with random names; may hold duplicated files. */
   files: StatementFile[];
-  /** Unique description markers: one-off rows (`ZQ` + digits) and processor residue digits. */
+  /** Unique description markers: one-off rows (`ZQ` + letters) and processor residue digits. */
   markers: string[];
   /** Amounts of the one-off rows; none equals a recurring amount or a yearly cost. */
   oneOffAmounts: number[];
@@ -383,9 +383,32 @@ const serviceSpecsArb: fc.Arbitrary<ServiceSpec[]> = fc
 const oneOffArb = fc.record({
   day: fc.integer({ min: 1, max: 28 }),
   month: fc.integer({ min: 0, max: 13 }),
-  digits: digitsArb(7),
   cents: fc.integer({ min: 100, max: 200_000 }),
 });
+
+const ALPHABET_SIZE = 26;
+const MARKER_LETTERS = 4;
+
+/**
+ * Letters-only code of a row index in base 26 (`0` is `AAAA`, `1` is `AAAB`). Core's normalizer
+ * strips digit tokens, so a marker with digits would merge with other one-off rows into one
+ * merchant; letters survive, and different indexes give different codes.
+ */
+export function letterCode(index: number): string {
+  let rest = index;
+  let code = "";
+  for (let i = 0; i < MARKER_LETTERS; i += 1) {
+    code = String.fromCharCode(65 + (rest % ALPHABET_SIZE)) + code;
+    rest = Math.floor(rest / ALPHABET_SIZE);
+  }
+  return code;
+}
+
+/** Marker of the one-off row at `index`: unique among the rows of a set. */
+export const oneOffMarker = (index: number): string => `ZQ${letterCode(index)}`;
+
+/** Statement description of the one-off row at `index`. */
+export const oneOffDescription = (index: number): string => `SHOP ${oneOffMarker(index)}`;
 
 const permutationOf = <T>(items: T[]): fc.Arbitrary<T[]> =>
   fc.shuffledSubarray(items, { minLength: items.length, maxLength: items.length });
@@ -419,10 +442,10 @@ export const statementSetArb: fc.Arbitrary<StatementSet> = fc
       while (forbidden.has(cents)) cents += 1;
       forbidden.add(cents);
       oneOffAmounts.push(cents);
-      const marker = `ZQ${oneOff.digits}${position}`;
+      const marker = oneOffMarker(position);
       markers.add(marker);
       const date = isoDate(Date.UTC(2025, Math.min(oneOff.month, months - 1), oneOff.day));
-      rows.push({ date, description: `SHOP ${marker}`, cents });
+      rows.push({ date, description: oneOffDescription(position), cents });
     }
 
     const byMonth = new Map<string, Row[]>();

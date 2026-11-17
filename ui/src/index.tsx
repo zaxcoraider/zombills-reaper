@@ -1,7 +1,8 @@
 import { createElement as h } from "react";
+import { GraveyardPage } from "./graveyard-page.tsx";
 
 export function mount() {
-  return <p>Reading the graveyard…</p>;
+  return <GraveyardPage />;
 }
 
 export default mount;

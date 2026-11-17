@@ -3,10 +3,15 @@ import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
-import { build } from "./build.ts";
+import { build, generateAgent } from "./build.ts";
 
 const REPO_ROOT = fileURLToPath(new URL("..", import.meta.url));
-const BUNDLES = ["mcp/dist/server.js", "backend/dist/server.js", "ui/dist/index.mjs"];
+const BUNDLES = [
+  "mcp/dist/server.js",
+  "backend/dist/server.js",
+  "ui/dist/index.mjs",
+  "agents/reaper.json",
+];
 
 const tempDirs: string[] = [];
 
@@ -62,6 +67,91 @@ describe("bundles", () => {
     expect(line1).toMatch(/^[0-9a-f]{40}(-dirty)?$/);
     const bundle = await readFile(join(REPO_ROOT, "mcp/dist/server.js"), "utf8");
     expect(bundle).toContain(line1);
+  });
+});
+
+describe("agents/reaper.json (generated)", () => {
+  async function readSkillBody(): Promise<string> {
+    const skill = await readFile(join(REPO_ROOT, "skills/reaper/SKILL.md"), "utf8");
+    const lines = skill.split("\n");
+    const close = lines.indexOf("---", 1);
+    return lines
+      .slice(close + 1)
+      .join("\n")
+      .replace(/^\n+/, "");
+  }
+
+  it("starts with the base prompt and ends with the skill body", async () => {
+    const dir = await freshBuild();
+    const agent = JSON.parse(await readFile(join(dir, "agents/reaper.json"), "utf8")) as {
+      prompt: string;
+    };
+    const base = JSON.parse(await readFile(join(REPO_ROOT, "agents/reaper.base.json"), "utf8")) as {
+      prompt: string;
+    };
+    const body = await readSkillBody();
+    expect(agent.prompt.startsWith(base.prompt + "\n\n# Skill: reaper\n\n")).toBe(true);
+    expect(agent.prompt.endsWith(body)).toBe(true);
+  });
+
+  it("holds no front-matter line of SKILL.md", async () => {
+    const dir = await freshBuild();
+    const agent = JSON.parse(await readFile(join(dir, "agents/reaper.json"), "utf8")) as {
+      prompt: string;
+    };
+    expect(agent.prompt.split("\n")).not.toContain("---");
+    expect(agent.prompt).not.toContain("triggers: ");
+    expect(agent.prompt).not.toContain("always: false");
+  });
+
+  it("copies every other base field in order", async () => {
+    const dir = await freshBuild();
+    const agent = JSON.parse(await readFile(join(dir, "agents/reaper.json"), "utf8")) as Record<
+      string,
+      unknown
+    >;
+    const base = JSON.parse(
+      await readFile(join(REPO_ROOT, "agents/reaper.base.json"), "utf8"),
+    ) as Record<string, unknown>;
+    expect(Object.keys(agent)).toEqual(Object.keys(base));
+    for (const key of Object.keys(base)) {
+      if (key !== "prompt") expect(agent[key]).toEqual(base[key]);
+    }
+  });
+
+  it("is deterministic: a second build is byte-equal", async () => {
+    const first = await freshBuild();
+    const second = await freshBuild();
+    const a = await readFile(join(first, "agents/reaper.json"));
+    const b = await readFile(join(second, "agents/reaper.json"));
+    expect(a.equals(b)).toBe(true);
+  });
+});
+
+describe("generateAgent", () => {
+  const SKILL = "---\nname: x\n---\n\n\n# Title\n\nBody\n";
+  const BASE = JSON.stringify({ name: "a", prompt: "Base.", tools: [] });
+
+  it("joins the base prompt and the skill body", () => {
+    const out = JSON.parse(generateAgent(BASE, SKILL)) as { prompt: string };
+    expect(out.prompt).toBe("Base.\n\n# Skill: reaper\n\n# Title\n\nBody\n");
+  });
+
+  it("normalises CRLF line endings", () => {
+    const out = JSON.parse(generateAgent(BASE, SKILL.replace(/\n/g, "\r\n"))) as {
+      prompt: string;
+    };
+    expect(out.prompt).not.toContain("\r");
+  });
+
+  it("fails on a skill without front-matter", () => {
+    expect(() => generateAgent(BASE, "# Title\n")).toThrow(/no front-matter/);
+    expect(() => generateAgent(BASE, "---\nname: x\n# Title\n")).toThrow(/no front-matter/);
+  });
+
+  it("fails when the base prompt already holds the skill text", () => {
+    const base = JSON.stringify({ name: "a", prompt: "Base. # Title\n\nBody\n" });
+    expect(() => generateAgent(base, SKILL)).toThrow(/already holds the skill text/);
   });
 });
 

@@ -37,6 +37,8 @@ function isCommitted(path: string): boolean {
 
 const app = readJson("app.json");
 const agent = readJson("agents/reaper.json");
+const baseAgent = readJson("agents/reaper.base.json");
+const skillText = readFileSync(join(ROOT, "skills/reaper/SKILL.md"), "utf8");
 const pkg = readJson("package.json");
 
 describe("app.json", () => {
@@ -138,6 +140,48 @@ describe("agents/reaper.json", () => {
     ]).toContainEqual(agent["allowedTools"]);
     expect(agent).not.toHaveProperty("model");
   });
+
+  // No Telegram fallback is recorded in the spike file, so the design defaults hold:
+  // the one-value allowedTools and the cron's silent: true.
+  it("takes tools and allowedTools from the base file", () => {
+    expect(agent["tools"]).toEqual(baseAgent["tools"]);
+    expect(agent["allowedTools"]).toEqual(baseAgent["allowedTools"]);
+    expect(agent["name"]).toBe(baseAgent["name"]);
+    expect(agent["description"]).toBe(baseAgent["description"]);
+  });
+
+  it("has a prompt with the prohibitions and the Delivery pointer (Req 8.2, 8.4)", () => {
+    const prompt = String(agent["prompt"]);
+    for (const word of ["read", "glob", "grep", "raw JSON", "path", "Delivery section"]) {
+      expect(prompt).toContain(word);
+    }
+  });
+
+  it("holds the five outline points and grants no tool (Req 8.4)", () => {
+    const prompt = String(baseAgent["prompt"]);
+    expect(prompt).toContain("You are the Reaper, the companion of Zombills.");
+    expect(prompt).toContain("Use the Reaper skill text below for every task.");
+    expect(prompt).toContain("Statement facts come only from the Reaper tools");
+    expect(prompt).toContain("Never paste a tool result as raw JSON.");
+    expect(prompt).toContain("Messages to Telegram follow the Delivery section");
+    expect(prompt).toContain("you never cancel, log in to a service, open links or send email");
+    expect(prompt).not.toMatch(/allowedTools|@kirocrew-core|@zombills-reaper/);
+  });
+
+  it("holds every section heading of SKILL.md and ends with the skill body (Req 8.2, 9.1)", () => {
+    const prompt = String(agent["prompt"]);
+    const headings = skillText.split("\n").filter((line) => line.startsWith("## "));
+    expect(headings).toHaveLength(8);
+    for (const heading of headings) {
+      expect(prompt).toContain(heading);
+    }
+    const lines = skillText.split("\n");
+    const body = lines
+      .slice(lines.indexOf("---", 1) + 1)
+      .join("\n")
+      .replace(/^\n+/, "");
+    expect(prompt.endsWith(body)).toBe(true);
+  });
 });
 
 describe("committed files (Req 1.8)", () => {
@@ -186,5 +230,33 @@ describe("root package.json and lock file (Req 2.6)", () => {
 
   it("tracks nothing under data/", () => {
     expect(gitFiles(["--cached", "--", "data"])).toEqual([]);
+  });
+});
+
+describe(".gitignore (Req 15.5)", () => {
+  function isIgnored(path: string): boolean {
+    try {
+      execFileSync("git", ["check-ignore", "-q", path], { cwd: ROOT, stdio: "ignore" });
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  it("ignores node_modules and the Data dir", () => {
+    expect(isIgnored("node_modules/x")).toBe(true);
+    expect(isIgnored("data/settings.json")).toBe(true);
+  });
+
+  it("does not ignore vendor, steering or the three bundles", () => {
+    for (const path of [
+      "vendor/zombills-core/SOURCE",
+      ".kiro/steering/privacy.md",
+      "mcp/dist/server.js",
+      "backend/dist/server.js",
+      "ui/dist/index.mjs",
+    ]) {
+      expect(isIgnored(path), `${path} is ignored`).toBe(false);
+    }
   });
 });

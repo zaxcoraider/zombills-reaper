@@ -17,7 +17,14 @@ inclusion: always
 | Scan history (recurring charges: merchant, cadence, amount in cents, dates; burials and savings) | JSON in the app data directory on the same machine |
 | MCP tool results | The Reaper agent's context. The agent's model runs through Crew, so tool results reach the model provider Crew is configured with. Tools therefore return **summaries only**: recurring charges and price changes, never raw rows, balances, account numbers or descriptions of one-off purchases |
 | Chat alerts and drafts | The user's Crew channel (Telegram for the demo). Telegram is a third party, so messages carry only: service name, old and new price, cadence, yearly cost, and the drafted cancel link or email |
-| Dashboard data | Served by the Reaper backend to the Crew dashboard on the same machine, behind the `X-Crew-Proxy` HMAC check |
+| Statements path | `data/settings.json` in the app folder (the Settings file, never in the repo). A path the user gives the agent is a tool argument, so it reaches the model provider and the transcript stores below; editing `settings.json` by hand keeps it on the machine (spec Req 3.6) |
+| Alert text kept by Crew | `~/.kiro/crew/cron-history/<id>.jsonl` holds the text of every monthly alert. Same machine, outside the app's data folder |
+| Transcript stores | kiro-cli's `<kiro home>/sessions/cli/<sid>.jsonl` (`kiro_crew/config/paths.py:1268`, `kiro_sessions_dir`) and Crew's `data_home()/sessions` (`history_files.py:27`, `session_digest.py:58`). They hold every scan summary, every bury draft and any path passed to `set_statements_folder`. They stay on the machine but outside the Data dir, and the Reaper does not manage them. "Summaries only" limits what reaches them, not whether they exist |
+| Dashboard data | Served by the Reaper backend to the Crew dashboard on the same machine, behind the proxy v2 HMAC check (`X-KiroCrew-Proxy-V2` with `X-KiroCrew-Proxy-Nonce`; source `apps/proxy_auth.py`) |
+
+## Built-in tools
+
+Crew mounts its base built-in tools `read`, `glob` and `grep` into every agent and does not strip them (`apps/permissions.py`). The rule that the agent reads statements only through the Reaper MCP tools is therefore enforced by the agent prompt and the skill, not by Crew. The real tool surface is checked by Telegram test T8 and recorded in `README.md`; until that test passes, the README gives the design default (source: spec requirements, Introduction "Findings", Req 8.3 and 15.3).
 
 ## Service names
 
@@ -30,7 +37,7 @@ inclusion: always
 - **No network calls** from `mcp/`, `backend/`, `ui/` or `scripts/` runtime code: no `fetch`, `http.request` to a remote host, `XMLHttpRequest`, WebSocket, `navigator.sendBeacon`, or SDK that does any of these. The backend only listens on the port Crew assigns. The only outbound path is the Crew channel, and Crew sends it, not the Reaper.
 - `scripts/sync-core` reads the Zombills repo on the local disk. It downloads nothing.
 - **No telemetry**: no analytics, crash reporting, usage pings or remote error trackers.
-- **No secrets in this repo**: no Telegram bot token, chat ID, API key or real statements path. Channel setup lives in Crew; the statements path lives in app config (`setup.configSchema`).
+- **No secrets in this repo**: no Telegram bot token, chat ID, API key or real statements path. Channel setup lives in Crew; the statements path lives in the Settings file `data/settings.json` (gitignored, written by the MCP server). `setup.configSchema` values do not reach apps in Crew 0.12.2 (spec Req 15.3).
 - **Logs** never contain transaction rows, amounts tied to merchants, file contents or full statement paths. Log counts and error kinds only.
 - **Dashboard** loads no fonts, images or scripts from a CDN or any external host. Bundle what it needs or use host-provided packages.
 - `vendor/zombills-core` keeps the Zombills rule: no network calls inside core. A network call there is a bug to fix in Zombills, not here.

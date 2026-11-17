@@ -1,7 +1,7 @@
-// Builds the three bundles (MCP server, backend, dashboard page) with esbuild.
+// Builds the three bundles (MCP server, backend, dashboard page) with esbuild and generates agents/reaper.json.
 // Dev script only: it never runs at Crew runtime. It reads local files and makes no network call.
-import { readFile } from "node:fs/promises";
-import { join } from "node:path";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
+import { dirname, join, resolve } from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
 import { build as esbuild } from "esbuild";
 import type { BuildOptions } from "esbuild";
@@ -23,6 +23,39 @@ async function readAppVersion(path: string): Promise<string> {
     throw new Error("app.json has no version string");
   }
   return manifest.version;
+}
+
+const SKILL_HEADING = "\n\n# Skill: reaper\n\n";
+
+/** Returns the skill text without its front-matter, with `\n` line endings and no leading blank lines. */
+export function skillBody(skillText: string): string {
+  const lines = skillText.replace(/\r\n?/g, "\n").split("\n");
+  if (lines[0] !== "---") {
+    throw new Error("skills/reaper/SKILL.md has no front-matter");
+  }
+  const close = lines.indexOf("---", 1);
+  if (close === -1) {
+    throw new Error("skills/reaper/SKILL.md has no front-matter");
+  }
+  let rest = lines.slice(close + 1);
+  while (rest.length > 0 && rest[0]?.trim() === "") rest = rest.slice(1);
+  return rest.join("\n");
+}
+
+/** Builds the agent file text: the base agent with the skill text appended to its prompt. */
+export function generateAgent(baseText: string, skillText: string): string {
+  // JSON.parse returns any; the fields are copied as they are and only `prompt` is checked.
+  const base = JSON.parse(baseText) as Record<string, unknown>;
+  const prompt = base["prompt"];
+  if (typeof prompt !== "string") {
+    throw new Error("agents/reaper.base.json has no prompt string");
+  }
+  const body = skillBody(skillText);
+  if (prompt.includes(body)) {
+    throw new Error("agents/reaper.base.json prompt already holds the skill text");
+  }
+  const agent = { ...base, prompt: prompt + SKILL_HEADING + body };
+  return JSON.stringify(agent, null, 2) + "\n";
 }
 
 /** Builds the three bundles under `outDir` (relative paths resolve against the repo root). */
@@ -77,6 +110,12 @@ export async function build({ outDir = "." }: { outDir?: string } = {}): Promise
     jsxFactory: "h",
     jsxFragment: "Fragment",
   });
+
+  const baseText = await readFile(join(REPO_ROOT, "agents/reaper.base.json"), "utf8");
+  const skillText = await readFile(join(REPO_ROOT, "skills/reaper/SKILL.md"), "utf8");
+  const agentFile = resolve(REPO_ROOT, outDir, "agents/reaper.json");
+  await mkdir(dirname(agentFile), { recursive: true });
+  await writeFile(agentFile, generateAgent(baseText, skillText));
 }
 
 if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href) {

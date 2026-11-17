@@ -1,3 +1,4 @@
+import { fileURLToPath } from "node:url";
 import { defineConfig } from "vitest/config";
 
 const EXCLUDE = ["**/node_modules/**", "vendor/**", "**/dist/**"];
@@ -14,6 +15,12 @@ export default defineConfig({
         },
       },
       {
+        resolve: {
+          // The host provides this module at run time; tests mock it over this stand-in.
+          alias: {
+            "@kirocrew/app-sdk": fileURLToPath(new URL("ui/src/test-app-sdk.ts", import.meta.url)),
+          },
+        },
         test: {
           name: "ui",
           environment: "jsdom",

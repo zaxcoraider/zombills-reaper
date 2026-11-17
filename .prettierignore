@@ -3,3 +3,4 @@ vendor
 **/dist
 package-lock.json
 .kiro
+agents/reaper.json
